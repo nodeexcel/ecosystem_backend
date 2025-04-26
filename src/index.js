@@ -5,7 +5,15 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+
+// Custom middleware to handle webhook requests
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/payments/webhook') {
+    next(); // Skip body parsing for webhook
+  } else {
+    express.json()(req, res, next); // Parse JSON normally for other routes
+  }
+});
 
 // Routes
 app.get('/', (req, res) => {

@@ -31,11 +31,18 @@ model User {
   company String? @db.VarChar(50)
   country String? @db.VarChar(50)
   role Role @default(User)
-  subscriptionType Subscription
+  subscriptionType Subscription?
   paymentId String? @db.VarChar(100)
-  isProfileComplete Boolean 
+  isProfileComplete Boolean @default(false)
+  stripeCustomerId String? @db.VarChar(50)
+  subscriptionStatus String? @db.VarChar(50)
 
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("users")
+}
+
+model sessionId{
+   id  Int @id 
+   session String @db.VarChar(225)
 }
