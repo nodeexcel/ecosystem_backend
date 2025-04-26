@@ -28,8 +28,7 @@ const stripeService = {
         ],
         mode: 'subscription',
         success_url: successUrl,
-        cancel_url: cancelUrl,
-        customer_email: customerEmail,
+      
       });
       return session;
     } catch (error) {
