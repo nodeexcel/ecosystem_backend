@@ -37,6 +37,7 @@ model User {
   isProfileComplete  Boolean   @default(false)
   stripeCustomerId   String?   @db.VarChar(50)
   subscriptionStatus String?   @db.VarChar(50)
+  subscriptionId String?  @db.VarChar(100)
   otp                String?   @db.VarChar(6)
   createdAt          DateTime  @default(now()) @map("created_at")
 

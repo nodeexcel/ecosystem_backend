@@ -8,10 +8,11 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 router.post('/checkout-session', paymentController.checkoutSession);
 router.post('/subscription-session', paymentController.createSubscriptionSession);
+router.post('/update-subscription-session', paymentController.createUpdateSubscriptionSession);
+router.post('/update-subscription',authMiddleware, paymentController.updateSubscriptionWithProration);
 
-// Webhook endpoint - must be a POST endpoint and should not use body-parser
 router.post('/webhook', 
-  express.raw({type: 'application/json'}), // Important: Use raw body for webhook
+  express.raw({type: 'application/json'}), 
   paymentController.stripeWebhook
 );
 

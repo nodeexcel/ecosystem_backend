@@ -14,7 +14,8 @@ const prisma = require('../lib/prisma');
           city:true,
           image:true,
           phoneNumber:true,
-          role:true
+          role:true,
+          subscriptionType:true
         }
       });
 
