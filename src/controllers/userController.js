@@ -5,10 +5,16 @@ const prisma = require('../lib/prisma');
     try {
       const user = await prisma.user.findUnique({
         where: { id: req.userId },
-        select: {
-          id: true,
-          username: true,
-          email: true
+        select:{
+          firstName:true,
+          lastName:true,
+          company:true,
+          email:true,
+          country:true,
+          city:true,
+          image:true,
+          phoneNumber:true,
+          role:true
         }
       });
 
@@ -16,7 +22,7 @@ const prisma = require('../lib/prisma');
         return res.status(404).json({ message: 'User not found' });
       }
 
-      res.json(user);
+      res.json(user); 
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Error fetching user profile' });
@@ -26,24 +32,27 @@ const prisma = require('../lib/prisma');
   // Update user profile
   exports.updateProfile= async (req, res) => {
     try {
-      const { firstName,lastName, email ,city,country,image,company} = req.body;
+      const { firstName, lastName, city, country, company, image ,phoneNumber} = req.body;
 
       const updatedUser = await prisma.user.update({
         where: { id: req.userId },
         data: {
           firstName,
           lastName,
-          phoneNumber,
           city,
           country,
+          company,
           image,
-          company
+          phoneNumber
         },
         select: {
           id: true,
           firstName: true,
-          lastName:true,
-          email: true
+          lastName: true,
+          city: true,
+          country: true,
+          image: true,
+          company: true
         }
       });
 

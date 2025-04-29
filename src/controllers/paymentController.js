@@ -37,6 +37,7 @@ exports.stripeWebhook = async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  console.log("Webhook call....");
   let event;
 
   try {
@@ -58,7 +59,7 @@ exports.stripeWebhook = async (req, res) => {
   switch (event.type) {
     case 'checkout.session.completed':
       const session = event.data.object;
-
+     
       console.log(session);
       
       try {
@@ -71,9 +72,10 @@ exports.stripeWebhook = async (req, res) => {
           // Update existing user
           await prisma.user.update({
             where: { email: session.customer_email || session.customer_details?.email },
-            data: {
+            data: { 
               stripeCustomerId: session.customer,
               subscriptionStatus: 'active',
+              
               // Add any other fields to update
             }
           });
@@ -84,6 +86,7 @@ exports.stripeWebhook = async (req, res) => {
               email: session.customer_email || session.customer_details?.email,
               stripeCustomerId: session.customer,
               subscriptionStatus: 'active',
+              subscriptionType:'pro'  
               // Add any other user fields you need
             }
           });

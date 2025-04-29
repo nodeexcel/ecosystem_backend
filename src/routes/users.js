@@ -1,12 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-// const { verifyToken } = require('../middleware/authMiddleware');
+const { handleImageUpload, upload } = require('../middleware/uploadMiddleware');
+
+const  verifyToken = require('../middleware/authMiddleware');
 
 // Get user profile
-router.get('/profile', userController.getProfile);
+router.get('/profile',verifyToken, userController.getProfile);
 
 // Update user profile
-router.put('/profile', userController.updateProfile);
+router.put('/profile', 
+    upload,
+    verifyToken,
+    handleImageUpload,
+    userController.updateProfile
+  );
 
 module.exports = router; 

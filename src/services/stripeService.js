@@ -1,10 +1,12 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+require('dotenv').config();
 
 const stripeService = {
 
   checkSession: async (sessionId) => {
     try {
       const session = await stripe.checkout.sessions.retrieve(sessionId);
+      console.log(session);
       return {
         paymentIntent: session,
         customerEmail: session.customer_email || session.customer_details?.email
@@ -27,7 +29,7 @@ const stripeService = {
           },
         ],
         mode: 'subscription',
-        success_url: successUrl,
+        success_url: `${process.env.FRONTEND_URL}/success`,
       
       });
       return session;

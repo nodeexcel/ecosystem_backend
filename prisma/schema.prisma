@@ -4,46 +4,52 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-enum Role{
-    User
-    Admin
+enum Role {
+  User
+  Admin
 }
 
-enum Subscription{
-pro
-business
-team
-enterprise
+enum Subscription {
+  pro
+  business
+  team
+  enterprise
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  firstName  String?   @db.VarChar(50)
-  lastName String? @db.VarChar(50)
-  phoneNumber String? @db.VarChar(20)
-  image String? @db.VarChar(100)
-  email     String   @unique @db.VarChar(100)
-  password  String?   @db.VarChar(255)
-  city String?  @db.VarChar(30)
-  company String? @db.VarChar(50)
-  country String? @db.VarChar(50)
-  role Role @default(User)
-  subscriptionType Subscription?
-  paymentId String? @db.VarChar(100)
-  activeProfile Boolean @default(false)
-  isProfileComplete Boolean @default(false)
-  stripeCustomerId String? @db.VarChar(50)
-  subscriptionStatus String? @db.VarChar(50)
-  otp String? @db.VarChar(6)
-  createdAt DateTime @default(now()) @map("created_at")
+  id                 Int       @id @default(autoincrement())
+  firstName          String?   @db.VarChar(50)
+  lastName           String?   @db.VarChar(50)
+  phoneNumber        String?   @db.VarChar(20)
+  image              String?   @db.VarChar(100)
+  email              String    @unique @db.VarChar(100)
+  password           String?   @db.VarChar(255)
+  city               String?   @db.VarChar(30)
+  company            String?   @db.VarChar(50)
+  country            String?   @db.VarChar(50)
+  role               Role      @default(User)
+  subscriptionType   Subscription?
+  paymentId          String?   @db.VarChar(100)
+  activeProfile      Boolean   @default(false)
+  isProfileComplete  Boolean   @default(false)
+  stripeCustomerId   String?   @db.VarChar(50)
+  subscriptionStatus String?   @db.VarChar(50)
+  otp                String?   @db.VarChar(6)
+  createdAt          DateTime  @default(now()) @map("created_at")
 
   @@map("users")
 }
 
-model sessionId{
-   id  Int @id 
-   session String @db.VarChar(225)
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(100)
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("password_reset_tokens")
 }
