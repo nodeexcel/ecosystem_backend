@@ -3,15 +3,18 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { handleImageUpload, upload } = require('../middleware/uploadMiddleware');
 
-const  verifyToken = require('../middleware/authMiddleware');
+const  authMiddleware = require('../middleware/authMiddleware');
 
 // Get user profile
-router.get('/profile',verifyToken, userController.getProfile);
+router.get('/profile',authMiddleware, userController.getProfile);
 
+router.post('/invite-member',authMiddleware,userController.inviteMember);
+
+router.post('/accept-invitation',authMiddleware,userController.acceptInvitation);
 // Update user profile
 router.put('/profile', 
     upload,
-    verifyToken,
+    authMiddleware,
     handleImageUpload,
     userController.updateProfile
   );

@@ -51,7 +51,39 @@ const sendResetPasswordEmail = async (email, token) => {
   }
 };
 
+
+const sendInvitationEmail = async ( email,token) => {
+  try {
+    const inviteUrl = `${process.env.FRONTEND_URL}/accept-invite?token=${token}`;
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'You’re Invited to Join Ecosystem.ai',
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <h2>Welcome to Ecosystem.ai!</h2>
+          <p>You’ve been invited to join the platform.</p>
+          <p>Click the button below to accept your invitation:</p>
+          <a href="${inviteUrl}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Accept Invitation</a>
+          <p>If the button doesn’t work, you can copy and paste this link into your browser:</p>
+          <p><a href="${inviteUrl}">${inviteUrl}</a></p>
+          <p><small>This invitation link will expire in 1 hour.</small></p>
+          <p>If you weren’t expecting this email, you can safely ignore it.</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Error sending invitation email:', error);
+    return false;
+  }
+};
+
+
 module.exports = {
   sendOTPEmail,
-  sendResetPasswordEmail
+  sendResetPasswordEmail,
+  sendInvitationEmail
 }; 

@@ -6,60 +6,6 @@ const { OAuth2Client } = require('google-auth-library');
 const fetch = require('node-fetch');
 
 
-  exports.signup= async (req, res) => {
-    
-    try {
-      const { firstName,lastName, email, password } = req.body;
-
-      // Check if user already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { email }
-      });
-
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
-      }
-
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      
-
-      const hashedPassword = await bcrypt.hash(password, salt);
-
-      // Create new user
-      const newUser = await prisma.user.create({
-        data: {
-          firstName,
-          lastName,
-          email,
-          password: hashedPassword
-        },
-        select: {
-          id: true,
-          firstName:true,
-          lastName:true,
-          email: true
-        }
-      });
-
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: newUser.id },
-        process.env.JWT_SECRET,
-        // { expiresIn: '24h' }
-      );
-
-      res.status(201).json({
-        message: 'User created successfully',
-        token,
-        user: newUser
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error creating user' });
-    }
-  },
-
   // Check user existence and profile activation status
   exports.checkUserProfile = async (req, res) => {
     try {
@@ -131,15 +77,41 @@ const fetch = require('node-fetch');
       }
 
       // Generate JWT token
-      const token = jwt.sign(
-        { userId: user.id },
+      const accessToken = jwt.sign(
+        { userId: user.id ,userEmail:user.email},
         process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: '1d' }
       );
+
+      const refreshToken=jwt.sign(
+        {userId:user.id,userEamil:user.email},
+        process.env.JWT_SECRET,
+        {
+          expiresIn:'30d'
+        }
+      );
+
+      await prisma.user.update({
+        where:{
+            email
+        },
+        data:{
+          refreshToken
+        }
+      })
+
+    //  res.cookie("accessToken",accessToken,{
+    //   httpOnly:true,
+    //   maxAge: 86400000 // 1 day
+    //  })
+
+    //  res.cookie("refreshToken",refreshToken,{
+    //   httpOnly:true,
+    //   maxAge:2592000000 // 30 days
+    //  })
 
       res.json({
         message: 'Login successful',
-        token,
         user: {
           id: user.id,
           firstName: user.firstName,
@@ -147,6 +119,8 @@ const fetch = require('node-fetch');
           email: user.email,
           activeProfile: user.activeProfile
         }
+        ,accessToken,
+        refreshToken
       });
     } catch (error) {
       console.error(error);
@@ -271,12 +245,48 @@ const fetch = require('node-fetch');
 
       let token;
       if(user.activeProfile){
-         token = jwt.sign(
-          { userId: user.id },
+        const accessToken = jwt.sign(
+          { userId: user.id ,userEmail:user.email},
           process.env.JWT_SECRET,
-          { expiresIn: '24h' }
+          { expiresIn: '1d' }
         );
+  
+        const refreshToken=jwt.sign(
+          {userId:user.id,userEamil:user.email},
+          process.env.JWT_SECRET,
+          {
+            expiresIn:'30d'
+          }
+        ); 
+        await prisma.user.update({
+          where:{
+              email
+          },
+          data:{
+            refreshToken
+          }
+        })
 
+      //  res.cookie("accessToken",accessToken,{
+      //   httpOnly:true,
+      //   maxAge: 86400000 // 1 day
+      //  })
+  
+      //  res.cookie("refreshToken",refreshToken,{
+      //   httpOnly:true,
+      //   maxAge:2592000000 // 30 days
+      //  })  
+        return res.json({
+          message: 'Login successful',
+            userId: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            profileActivated: user.activeProfile
+          
+          ,accessToken,
+          refreshToken
+        });
       }
     
 
@@ -284,7 +294,6 @@ const fetch = require('node-fetch');
       return res.status(200).json({
         profilePresent: true,
         profileActivated: user.activeProfile,
-        token:token,
         message: user.activeProfile,
         userId: user.id,
         email
@@ -296,4 +305,110 @@ const fetch = require('node-fetch');
     }
   }
 
+  exports.refreshAccessToken=async (req,res)=>{
+     try{
+     const {token}=req.body;
+
+      if(!token){
+      return  res.json({
+          success:false,
+          message:"refreshToken is required"
+        });
+      }
+
+      let decoded;
+      try{
+       decoded=jwt.verify(token,process.env.JWT_SECRET);
+
+      }catch(error){
+      console.log("Error",error.message);
+      return res.status(401).json({
+      success:false,
+      message:"Token is expired"
+    });
+  }
+
+     const user=await prisma.user.findUnique({where:{id:decoded.userId }});
+
+     if(!user){
+      return res.status(401).json({
+        success:false,
+        message:"User not found"
+      });
+     }
+
+     if(user.refreshToken!=token){
+
+      return res.status(401).json({
+        success:false,
+        message:"Not valid refresh token"
+      })
+     }
+      
+      
+      const accessToken=jwt.sign({userId:user.id,userEmail:user.email},process.env.JWT_SECRET,{expiresIn:"1d"});
+
+
+
+      // res.cookie("accessToken",accessToken,{
+      //   httpOnly:true,
+      //   maxAge:86400000
+      // });
+    
+       return res.status(200).json({
+            success:true,
+            message:"Token generated successfully",
+            accessToken
+
+       });
+
+     }catch(error){
+      console.log("Error",error.message);
+     return res.status(500).json({     
+          success:false,
+          message:"Internal server error"
+        });
+     }
+  }
+
+
+  exports.logOut=async(req,res)=>{
+    try{
+
+      const userId=req.userId;
+      //  res.clearCookie("refreshToken",{
+      //   httpOnly:true,
+      //   sameSite:'Strict'
+      //  });
+      //  res.clearCookie("accessToken",{
+      //   httpOnly:true,
+      //   sameSite:'Strict'
+      //  })
+
+      //  res.status(200).json({
+      //   success:true,
+      //   message:"Logged out successfully"
+      //  })
+
+      await prisma.user.update({where:{
+            id:userId
+      },
+      data:{
+        refreshToken:null
+      }
+    });
+
+    return res.status(200).json({
+     success:true,
+     message:"Logout successfully "
+    });
+
+    }catch(error){
+      console.log("error",error.message)
+      res.json({
+        success:false,
+        message:error.message
+      })
+    }
+  }
   

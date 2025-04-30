@@ -4,8 +4,7 @@ const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
 const { upload, handleImageUpload } = require('../middleware/uploadMiddleware');
 
-// Signup route
-router.post('/signup', authController.signup);
+const authMiddleware=require("../middleware/authMiddleware");
 
 // Check user profile status
 router.post('/check-profile', authController.checkUserProfile);
@@ -22,7 +21,9 @@ router.post('/set-password', authController.setPassword);
 // Google Login route
 router.post('/google-login', authController.googleLogin);
 
-// Update profile route with image upload
+router.post("/refresh-token",authController.refreshAccessToken);
+
+router.get('/logout',authMiddleware,authController.logOut); 
 
 
 module.exports = router; 

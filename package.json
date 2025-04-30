@@ -11,7 +11,7 @@
   "license": "ISC",
   "description": "Express.js backend with PostgreSQL",
   "dependencies": {
-    "@prisma/client": "^6.6.0",
+    "@prisma/client": "^6.7.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.6.0",
     "cors": "^2.8.5",
