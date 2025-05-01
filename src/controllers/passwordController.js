@@ -173,7 +173,7 @@ const setNewPassword = async (req, res) => {
     // Verify current password
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ 
+      return res.status(400).json({ 
         success: false, 
         message: "Current password is incorrect" 
       });

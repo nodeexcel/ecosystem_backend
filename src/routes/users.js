@@ -10,7 +10,11 @@ router.get('/profile',authMiddleware, userController.getProfile);
 
 router.post('/invite-member',authMiddleware,userController.inviteMember);
 
-router.post('/accept-invitation',authMiddleware,userController.acceptInvitation);
+router.post('/accept-invitation',userController.acceptInvitation);
+
+// Get team members for admin
+router.get('/team-members', authMiddleware, userController.getTeamMembers);
+
 // Update user profile
 router.put('/profile', 
     upload,
@@ -18,5 +22,7 @@ router.put('/profile',
     handleImageUpload,
     userController.updateProfile
   );
+
+router.get('/transactions', authMiddleware, userController.getUserTransactions);
 
 module.exports = router; 

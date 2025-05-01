@@ -8,7 +8,6 @@ datasource db {
 }
 
 enum Role {
-  User
   Admin
   Guest
   Member
@@ -32,8 +31,9 @@ model User {
   city               String?   @db.VarChar(30)
   company            String?   @db.VarChar(50)
   country            String?   @db.VarChar(50)
-  role               Role      @default(User)
+  role               Role      @default(Admin)
   subscriptionType   Subscription?
+  numberOfTeamMembers Int  @default(0)
   paymentId          String?   @db.VarChar(100)
   activeProfile      Boolean   @default(false)
   isProfileComplete  Boolean   @default(false)
@@ -61,7 +61,7 @@ model PasswordResetToken {
 
 
 model teamMembers{
-   id Int @id
+   id Int @id @default(autoincrement())
    memberId Int 
    adminId Int   
    role Role
@@ -80,4 +80,22 @@ model teamInvite {
   createdAt  DateTime @default(now())
 
   @@map("invite_tokens")
+}
+
+
+model transactionHistory {
+  id               Int      @id @unique @default(autoincrement())
+  userId           Int
+  paymentId        String   @db.VarChar(100)
+  amountPaid       Float
+  email            String   @db.VarChar(50)
+  status           String   @db.VarChar(50)
+  paymentMethod    String?  @db.VarChar(50)
+  subscriptionType Subscription?
+  receiptUrl       String?  @db.VarChar(255)
+  currency  String?
+  transactionDate  DateTime @default(now())
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("transaction_history")
 }

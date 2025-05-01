@@ -41,10 +41,8 @@ exports.stripeWebhook = async (req, res) => {
   let event;
 
   try {
-    // Get the raw body of the request
     const rawBody = req.body;
-    
-    // Verify the webhook signature
+
     event = stripe.webhooks.constructEvent(
       rawBody,
       sig,
@@ -55,15 +53,15 @@ exports.stripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle the event
   switch (event.type) {
     case 'checkout.session.completed':
       const session = event.data.object;
-      
+
       try {
-        // Check if this is a subscription update payment
+        const customerEmail = session.customer_details?.email || session.customer_email;
+
         if (session.metadata?.type === 'subscription_update') {
-          // Update the subscription in Stripe
+          // Subscription update logic
           const updatedSubscription = await stripe.subscriptions.update(session.metadata.subscriptionId, {
             items: [{
               id: session.metadata.subscriptionItemId,
@@ -71,19 +69,9 @@ exports.stripeWebhook = async (req, res) => {
             }],
           });
 
-          // Get the new price details
           const newPrice = await stripe.prices.retrieve(session.metadata.newPriceId);
-        
-
-          // Get the product details to determine subscription type
           const product = await stripe.products.retrieve(newPrice.product);
-          console.log('Product Details:', {
-            id: product.id,
-            name: product.name,
-            metadata: product.metadata
-          });
 
-          // Determine subscription type based on product name or metadata
           let subscriptionType = 'pro';
           if (product.name.toLowerCase().includes('business')) {
             subscriptionType = 'business';
@@ -92,11 +80,10 @@ exports.stripeWebhook = async (req, res) => {
           } else if (product.name.toLowerCase().includes('enterprise')) {
             subscriptionType = 'enterprise';
           }
-          
-          // Update user's subscription in database
+
           await prisma.user.update({
-            where: { email: session.customer_details.email },
-            data: { 
+            where: { email: customerEmail },
+            data: {
               subscriptionType: subscriptionType,
               subscriptionStatus: updatedSubscription.status,
               subscriptionId: updatedSubscription.id,
@@ -104,52 +91,126 @@ exports.stripeWebhook = async (req, res) => {
             }
           });
 
-          console.log('Subscription updated successfully in database');
-        } else {
-          // Handle regular subscription creation
-          const existingUser = await prisma.user.findUnique({
-            where: { email: session.customer_email || session.customer_details?.email }
+          // Save transaction history
+          const amountPaidUpdate = (session.amount_total ?? 0)/100;
+          const currencyUpdate = session.currency;
+          const paymentMethodUpdate = session.payment_method_types?.[0] || null;
+          const transactionDateUpdate = new Date((session.created || Date.now() / 1000) * 1000);
+
+          const userUpdate = await prisma.user.findUnique({
+            where: { email: customerEmail }
           });
+          if (userUpdate) {
+            await prisma.transactionHistory.create({
+              data: {
+                userId: userUpdate.id,
+                paymentId: session.metadata.newPriceId,
+                amountPaid: amountPaidUpdate,
+                currency: currencyUpdate,
+                status: session.payment_status,
+                paymentMethod: paymentMethodUpdate,
+                subscriptionType: subscriptionType,
+                receiptUrl: null,
+                transactionDate: transactionDateUpdate,
+                email: customerEmail
+              }
+            });
+          }
+
+          console.log('Subscription updated successfully in database');
+
+        } else {
+          // New subscription logic
+          const existingUser = await prisma.user.findUnique({
+            where: { email: customerEmail }
+          });
+
+          const subscriptionType = 'pro';
+          const amountPaidNew = (session.amount_total ?? 0)/100 ;
+          const currencyNew = session.currency;
+          const paymentMethodNew = session.payment_method_types?.[0] || null;
+          const transactionDateNew = new Date((session.created || Date.now() / 1000) * 1000);
+          let receiptUrlNew = null;
+
+          if (session.payment_intent) {
+            try {
+              const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
+              receiptUrlNew = paymentIntent.charges.data[0]?.receipt_url || null;
+            } catch (err) {
+              console.error('Error retrieving PaymentIntent for receipt:', err);
+            }
+          }
 
           if (existingUser) {
             await prisma.user.update({
-              where: { email: session.customer_email || session.customer_details?.email },
-              data: { 
+              where: { email: customerEmail },
+              data: {
                 stripeCustomerId: session.customer,
                 subscriptionStatus: 'active',
                 subscriptionId: session.subscription,
                 paymentId: session.metadata?.newPriceId || null
               }
             });
-          } else {
-            await prisma.user.create({
+
+            await prisma.transactionHistory.create({
               data: {
-                email: session.customer_email || session.customer_details?.email,
+                userId: existingUser.id,
+                paymentId: session.payment_intent || session.subscription,
+                amountPaid: amountPaidNew,
+                currency: currencyNew,
+                status: session.payment_status,
+                paymentMethod: paymentMethodNew,
+                subscriptionType: subscriptionType,
+                receiptUrl: receiptUrlNew,
+                transactionDate: transactionDateNew,
+                email: customerEmail
+              }
+            });
+
+          } else {
+            const newUser = await prisma.user.create({
+              data: {
+                email: customerEmail,
                 stripeCustomerId: session.customer,
                 subscriptionStatus: 'active',
-                subscriptionType: 'pro',  
+                subscriptionType: subscriptionType,
                 subscriptionId: session.subscription,
                 paymentId: session.metadata?.newPriceId || null
+              }
+            });
+
+            await prisma.transactionHistory.create({
+              data: {
+                userId: newUser.id,
+                paymentId: session.payment_intent || session.subscription,
+                amountPaid: amountPaidNew,
+                currency: currencyNew,
+                status: session.payment_status,
+                paymentMethod: paymentMethodNew,
+                subscriptionType: subscriptionType,
+                receiptUrl: receiptUrlNew,
+                transactionDate: transactionDateNew,
+                email: customerEmail
               }
             });
           }
         }
 
-        console.log('User data processed successfully');
+        console.log('User data and transaction history processed successfully');
+
       } catch (error) {
-        console.error('Error processing user data:', error);
-        return res.status(500).json({ error: 'Error processing user data' });
+        console.error('Error processing user data or saving transaction history:', error);
+        return res.status(500).json({ error: 'Error processing user data or transaction history' });
       }
       break;
-    
-    // Add other event types you want to handle
+
     default:
       console.log(`Unhandled event type ${event.type}`);
   }
 
-  // Return a 200 response to acknowledge receipt of the event
   res.json({ received: true });
 };
+
 
 exports.createUpdateSubscriptionSession = async (req, res) => {
   try {

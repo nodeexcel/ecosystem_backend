@@ -16,7 +16,7 @@ const fetch = require('node-fetch');
       });
 
       if (!user) {
-        return res.status(401).json({
+        return res.status(400).json({
           profilePresent: false,
           profileActivated: false,
           message: 'User not found'
@@ -68,12 +68,12 @@ const fetch = require('node-fetch');
       });
 
       if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return res.status(400).json({ message: 'Invalid credentials' });
       }
 
       const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return res.status(400).json({ message: 'Invalid credentials' });
       }
 
       // Generate JWT token
@@ -142,7 +142,7 @@ const fetch = require('node-fetch');
       }
 
       if (user.otp !== otp) {
-        return res.status(401).json({ message: 'Invalid OTP' });
+        return res.status(400).json({ message: 'Invalid OTP' });
       }
 
       await prisma.user.update({
@@ -169,7 +169,7 @@ const fetch = require('node-fetch');
 
       const { email, newPassword } = req.body;
       if(!email||!newPassword){     
-       return res.status(401).json({
+       return res.status(400).json({
         message:"Resources are missing"
        })
      }
@@ -225,7 +225,7 @@ const fetch = require('node-fetch');
       });
 
       if (!response.ok) {
-        return res.status(401).json({ message: 'Invalid access token' });
+        return res.status(400).json({ message: 'Invalid access token' });
       }
 
       const userInfo = await response.json();
@@ -237,7 +237,7 @@ const fetch = require('node-fetch');
       });
 
       if (!user) {
-        return res.status(401).json({
+        return res.status(400).json({
           message: 'User not found Please signup first',
           email
         });
@@ -331,7 +331,7 @@ const fetch = require('node-fetch');
      const user=await prisma.user.findUnique({where:{id:decoded.userId }});
 
      if(!user){
-      return res.status(401).json({
+      return res.status(400).json({
         success:false,
         message:"User not found"
       });
