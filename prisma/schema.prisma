@@ -33,7 +33,7 @@ model User {
   country            String?   @db.VarChar(50)
   role               Role      @default(Admin)
   subscriptionType   Subscription?
-  numberOfTeamMembers Int  @default(0)
+  numberOfTeamMembers Int  @default(1)
   paymentId          String?   @db.VarChar(100)
   activeProfile      Boolean   @default(false)
   isProfileComplete  Boolean   @default(false)
@@ -42,7 +42,11 @@ model User {
   subscriptionId String?  @db.VarChar(100)
   refreshToken String? @db.VarChar(255)
   otp                String?   @db.VarChar(6)
-  createdAt          DateTime  @default(now()) @map("created_at")
+  subscriptionEndDate DateTime?
+  subscriptionStartDate DateTime?
+  subscriptionUpdatedAt DateTime?
+  teamId String ? @db.VarChar(255)
+  createdAt        DateTime  @default(now()) @map("created_at")
 
   @@map("users")
 }
@@ -58,13 +62,21 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
-
+model team{
+  id Int @id @default(autoincrement())
+  teamId String @db.VarChar(255)
+  numberOfMembers Int @default(1)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+}
 
 model teamMembers{
    id Int @id @default(autoincrement())
    memberId Int 
-   adminId Int   
+   adminId Int 
+   isAdmin Boolean @default(false)  
    role Role
+   teamId String @db.VarChar(255)
    createdAt  DateTime @default(now()) @map("created_at")
 }
 
@@ -74,6 +86,7 @@ model teamInvite {
   email      String   @db.VarChar(100)
   token      String   @unique @db.VarChar(255)
   adminId    Int
+  teamId String @db.VarChar(255)
   role     Role
   expiresAt  DateTime
   accepted   Boolean  @default(false)

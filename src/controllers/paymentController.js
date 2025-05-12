@@ -87,7 +87,8 @@ exports.stripeWebhook = async (req, res) => {
               subscriptionType: subscriptionType,
               subscriptionStatus: updatedSubscription.status,
               subscriptionId: updatedSubscription.id,
-              paymentId: session.metadata.newPriceId
+              paymentId: session.metadata.newPriceId,
+              subscriptionUpdatedAt: new Date(),
             }
           });
 
@@ -112,7 +113,7 @@ exports.stripeWebhook = async (req, res) => {
                 subscriptionType: subscriptionType,
                 receiptUrl: null,
                 transactionDate: transactionDateUpdate,
-                email: customerEmail
+                email: customerEmail,
               }
             });
           }
@@ -148,7 +149,8 @@ exports.stripeWebhook = async (req, res) => {
                 stripeCustomerId: session.customer,
                 subscriptionStatus: 'active',
                 subscriptionId: session.subscription,
-                paymentId: session.metadata?.newPriceId || null
+                paymentId: session.metadata?.newPriceId || null,
+                subscriptionUpdatedAt: new Date(),
               }
             });
 
@@ -175,14 +177,17 @@ exports.stripeWebhook = async (req, res) => {
                 subscriptionStatus: 'active',
                 subscriptionType: subscriptionType,
                 subscriptionId: session.subscription,
-                paymentId: session.metadata?.newPriceId || null
+                paymentId: session.metadata?.newPriceId || null,
+                subscriptionStartDate: new Date(),
+                subscriptionEndDate: new Date(new Date().setDate(new Date().getDate() + 30)),
+                subscriptionUpdatedAt: new Date(),
               }
             });
 
             await prisma.transactionHistory.create({
               data: {
                 userId: newUser.id,
-                paymentId: session.payment_intent || session.subscription,
+                paymentId: session.subscription,
                 amountPaid: amountPaidNew,
                 currency: currencyNew,
                 status: session.payment_status,
@@ -252,7 +257,7 @@ exports.createUpdateSubscriptionSession = async (req, res) => {
           subscriptionId: user.subscriptionId
         }
       },
-      success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.FRONTEND_URL}/success?session_id=${CHECKOUT_SESSION_ID}`,
       cancel_url:`${process.env.FRONTEND_URL}/cancel`,
     });
 

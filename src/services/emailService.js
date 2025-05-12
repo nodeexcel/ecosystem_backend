@@ -52,7 +52,7 @@ const sendResetPasswordEmail = async (email, token) => {
 };
 
 
-const sendInvitationEmail = async ( email,token) => {
+const sendInvitationEmail = async ( email,token,adminName) => {
   try {
     const inviteUrl = `${process.env.FRONTEND_URL}/accept-invite?token=${token}`;
     const mailOptions = {
@@ -62,7 +62,7 @@ const sendInvitationEmail = async ( email,token) => {
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           <h2>Welcome to Ecosystem.ai!</h2>
-          <p>You’ve been invited to join the platform.</p>
+          <p>You’ve been invited to join the platform by ${adminName}</p>
           <p>Click the button below to accept your invitation:</p>
           <a href="${inviteUrl}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Accept Invitation</a>
           <p>If the button doesn’t work, you can copy and paste this link into your browser:</p>

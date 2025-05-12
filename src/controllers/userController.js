@@ -114,6 +114,30 @@ const {sendInvitationEmail}=require("../services/emailService");
 
   const token = uuid();
   const now=new Date();
+  let teamId;
+
+  if(admin.teamId){
+    teamId=admin.teamId;
+  }else{
+    teamId=uuid();
+    await prisma.user.update({
+      where:{
+        id:adminId
+      },
+      data:{
+        teamId
+      }
+    })
+    await prisma.teamMembers.create({
+      data:{
+        memberId:adminId,
+        adminId:adminId,
+        role:admin.role,
+        teamId,
+        isAdmin:true
+      }
+    })
+  }
 
   await prisma.teamInvite.create({ 
     data: {
@@ -121,11 +145,12 @@ const {sendInvitationEmail}=require("../services/emailService");
       token,
       adminId,
       role,
+      teamId,
       expiresAt:  new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // expire date 7days
     },
   });
 
- const status= await sendInvitationEmail(email,token);
+ const status= await sendInvitationEmail(email,token,admin.firstName+" "+admin.lastName);
 
  if(status){
   return  res.status(200).json({ message: 'Invite sent successfully.' });
@@ -196,6 +221,7 @@ exports.acceptInvitation = async (req,res) => {
       data: {
         email: invitation.email,
         role: invitation.role,
+        teamId:invitation.teamId
       },
     });
 
@@ -212,7 +238,9 @@ exports.acceptInvitation = async (req,res) => {
       data:{
         memberId:user.id,
         adminId:admin.id,
-        role:invitation.role
+        role:invitation.role,
+        teamId:invitation.teamId,
+        isAdmin:false
       }
     });
 
