@@ -128,7 +128,7 @@ const {sendInvitationEmail}=require("../services/emailService");
         teamId
       }
     })
-    await prisma.teamMembers.create({
+    await prisma.teammembers.create({
       data:{
         memberId:adminId,
         adminId:adminId,
@@ -234,7 +234,7 @@ exports.acceptInvitation = async (req,res) => {
       }
     })
 
-    await prisma.teamMembers.create({
+    await prisma.teammembers.create({
       data:{
         memberId:user.id,
         adminId:admin.id,
@@ -301,18 +301,23 @@ exports.getTeamMembers = async (req, res) => {
         message: 'Only admins can view team members'
       });
     }
-
+console.log(adminId)
     // Get all team members with their details in a single query
-    const teamMembers = await prisma.teamMembers.findMany({
+    const teamMembers = await prisma.teammembers.findMany({
       where: {
         adminId: adminId
       },
       orderBy: {
-        createdAt: 'desc'
+        created_at: 'desc'
       }
     });
 
-
+if(!teamMembers && teamMembers.length === 0){
+  return res.json({
+      success: false,
+      message: "No team members found"
+    });
+}
 
     // Transform the response to a cleaner format
     const formattedTeamMembers =await Promise.all( teamMembers.map(async (member) => {

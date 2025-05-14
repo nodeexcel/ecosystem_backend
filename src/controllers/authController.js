@@ -243,6 +243,15 @@ const fetch = require('node-fetch');
         });
       }
 
+      // await prisma.user.update({
+      //   where:{
+      //     email
+      //   },
+      //   data:{
+      //     google_id:googleId
+      //   }
+      // });
+
       let token;
       if(user.activeProfile){
         const accessToken = jwt.sign(
