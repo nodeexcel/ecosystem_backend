@@ -18,12 +18,11 @@ model User {
   city                  String?              @db.VarChar(30)
   company               String?              @db.VarChar(50)
   country               String?              @db.VarChar(50)
-  role                  String?              @default("Admin") @db.VarChar(20)
+  role                  String?              @db.VarChar(20)
   subscriptionType      String?              @db.VarChar(20)
-  numberOfTeamMembers   Int?                 @default(1)
   paymentId             String?              @db.VarChar(100)
-  activeProfile         Boolean?             @default(false)
-  isProfileComplete     Boolean?             @default(false)
+  activeProfile         Boolean?
+  isProfileComplete     Boolean?
   stripeCustomerId      String?              @db.VarChar(50)
   subscriptionStatus    String?              @db.VarChar(50)
   subscriptionId        String?              @db.VarChar(100)
@@ -32,10 +31,12 @@ model User {
   subscriptionEndDate   DateTime?            @db.Timestamp(6)
   subscriptionStartDate DateTime?            @db.Timestamp(6)
   subscriptionUpdatedAt DateTime?            @db.Timestamp(6)
-  teamId                String?              @db.VarChar(255)
-  createdAt             DateTime?            @default(now()) @map("created_at") @db.Timestamp(6)
-  google_id             String?              @db.VarChar
+  createdAt             DateTime?            @map("created_at") @db.Timestamp(6)
   appointment_setter    appointment_setter[]
+  invite_tokens         teamInvite[]
+  team                  team[]
+  teammembers           teammembers[]
+  transaction_history   transactionHistory[]
 
   @@index([id], map: "ix_users_id")
   @@map("users")
@@ -46,7 +47,7 @@ model PasswordResetToken {
   email     String    @db.VarChar(100)
   token     String    @unique @db.VarChar(255)
   expiresAt DateTime  @db.Timestamp(6)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  createdAt DateTime? @map("created_at") @db.Timestamp(6)
 
   @@map("password_reset_tokens")
 }
@@ -55,19 +56,21 @@ model teamInvite {
   id         Int       @id @default(autoincrement())
   email      String    @db.VarChar(100)
   token      String    @unique @db.VarChar(255)
-  adminId    Int
-  teamId     String    @db.VarChar(255)
-  role       String?   @db.VarChar(20)
+  userId     Int?
+  teamId     String?   @db.VarChar
+  role       String?   @db.VarChar
   expiresAt  DateTime  @db.Timestamp(6)
-  accepted   Boolean?  @default(false)
-  created_at DateTime? @default(now()) @db.Timestamp(6)
+  accepted   Boolean?
+  created_at DateTime? @db.Timestamp(6)
+  team       team?     @relation(fields: [teamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("invite_tokens")
 }
 
 model transactionHistory {
   id               Int       @id @default(autoincrement())
-  userId           Int
+  userId           Int?
   paymentId        String    @db.VarChar(100)
   amountPaid       Float
   email            String    @db.VarChar(50)
@@ -76,8 +79,9 @@ model transactionHistory {
   subscriptionType String?   @db.VarChar(20)
   receiptUrl       String?   @db.VarChar(255)
   currency         String?   @db.VarChar
-  transactionDate  DateTime? @default(now()) @db.Timestamp(6)
-  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  transactionDate  DateTime? @db.Timestamp(6)
+  createdAt        DateTime? @map("created_at") @db.Timestamp(6)
+  users            User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("transaction_history")
 }
@@ -97,6 +101,8 @@ model appointment_setter {
   sequence                Json
   objective_of_the_agent  String   @db.VarChar
   calendar_choosed        String?  @db.VarChar
+  webpage_link            String?  @db.VarChar
+  webpage_type            String?  @db.VarChar
   reply_min_time          Int
   reply_max_time          Int
   is_followups_enabled    Boolean?
@@ -105,8 +111,6 @@ model appointment_setter {
   directness              Int
   is_active               Boolean?
   user_id                 Int?
-  webpage_link            String?  @db.VarChar
-  webpage_type            String?  @db.VarChar
   users                   User?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([id], map: "ix_appointment_setter_id")
@@ -114,10 +118,20 @@ model appointment_setter {
 
 model teammembers {
   id         Int       @id @default(autoincrement())
-  memberId   Int
-  adminId    Int
-  isAdmin    Boolean?  @default(false)
-  role       String?   @db.VarChar(20)
-  teamId     String    @db.VarChar(255)
-  created_at DateTime? @default(now()) @db.Timestamp(6)
+  isAdmin    Boolean?
+  role       String    @db.VarChar(20)
+  teamId     String?   @db.VarChar
+  userId     Int?
+  created_at DateTime? @db.Timestamp(6)
+  team       team?     @relation(fields: [teamId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      User?     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model team {
+  id                  String        @id @db.VarChar
+  userId              Int?
+  numberOfTeamMembers Int?
+  invite_tokens       teamInvite[]
+  users               User?         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  teammembers         teammembers[]
 }

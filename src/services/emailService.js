@@ -61,14 +61,14 @@ const sendOTPEmail = async (email, otp) => {
     </div>
 
     <!-- Footer - Using table layout for better email client compatibility -->
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #6366f1; color: white;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #6366f1; color: white;">
       <tr>
         <td style="padding: 0; width:100% ">
           <!-- Logo in Footer -->
           
           <div style="display:flex; justify-content:space-between;">
         
-          <div style="margin-left:20px;">
+          <div style="margin-left:20px; width: 100%;">
           <div style="margin-bottom: 30px; padding:20px 0 0 0;">
             <img style="width: 50px; height: 50px; vertical-align: middle;" alt="Logo" src="https://res.cloudinary.com/dyqxb9s7l/image/upload/v1747207644/logo_lxvyxp.png"/>
             <span style="font-weight: 600; color: white; font-size: 1.75rem; vertical-align: middle; margin-left: 10px;">
@@ -102,16 +102,19 @@ const sendOTPEmail = async (email, otp) => {
           <hr style="border: none; height:1px; background-color:#7B77E4; margin: 20px 0;">
           
           <!-- Copyright and Links -->
-          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; !width: 100%; margin-left:15px;">
-            <div style="">
-              Copyright © 2025 All Rights Reserved
-            </div>
-            <div>
-              <a href="#" style="color: white; text-decoration: none; padding-right:5px;">Terms & Conditions</a>
-              <span style="display: inline-block; width: 1px; height: 18px; background-color: #7B77E4; "></span>
-              <a href="#" style="color: white; text-decoration: none;paddin-left:5px;">Privacy Policy</a>
-            </div>
-          </div>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin: 15px 0;">
+  <tr>
+    <td align="left" style="font-size:14px; color:white;padding-left:10px;">
+      Copyright © 2025 All Rights Reserved
+    </td>
+    <td align="right" style="font-size:14px; color:white;padding-right:10px;">
+      <a href="${process.env.FRONTEND_URL}/terms-conditions" style="color: white; text-decoration: none; padding-right:5px;">Terms & Conditions</a>
+      <span style="display: inline-block; width: 1px; height: 18px; background-color: #7B77E4;"></span>
+      <a href="${process.env.FRONTEND_URL}/privacy-policy" style="color: white; text-decoration: none; padding-left:5px;">Privacy Policy</a>
+    </td>
+  </tr>
+</table>
+
         </td>
         
         <!-- Footer Decoration Image in separate cell -->
@@ -229,16 +232,18 @@ const sendResetPasswordEmail = async (email, token) => {
           <hr style="border: none; height:1px; background-color:#7B77E4; margin: 20px 0;">
           
           <!-- Copyright and Links -->
-          <div style="  width: 100%; display:flex; justify-content: space-around !important; align-items: center; margin:15px;">
-            <div style="">
-              Copyright © 2025 All Rights Reserved
-            </div>
-            <div style="margin-bottom:10px" >
-              <a href='${process.env.FRONTEND_URL}/terms-conditions' style="color: white; text-decoration: none; padding-right:5px;">Terms & Conditions</a>
-              <span style="display: inline-block; width: 1px; height: 18px; background-color: #7B77E4; "></span>
-              <a href='${process.env.FRONTEND_URL}/privacy-policy' style="color: white; text-decoration: none;paddin-left:5px;">Privacy Policy</a>
-            </div>
-          </div>
+           <table width="100%" cellpadding="0" cellspacing="0" style="margin: 15px 0;">
+  <tr>
+    <td align="left" style="font-size:14px; color:white;padding-left:10px;">
+      Copyright © 2025 All Rights Reserved
+    </td>
+    <td align="right" style="font-size:14px; color:white;padding-right:10px;">
+      <a href="${process.env.FRONTEND_URL}/terms-conditions" style="color: white; text-decoration: none; padding-right:5px;">Terms & Conditions</a>
+      <span style="display: inline-block; width: 1px; height: 18px; background-color: #7B77E4;"></span>
+      <a href="${process.env.FRONTEND_URL}/privacy-policy" style="color: white; text-decoration: none; padding-left:5px;">Privacy Policy</a>
+    </td>
+  </tr>
+</table>
         </td>
         
         <!-- Footer Decoration Image in separate cell -->

@@ -17,7 +17,6 @@ const {sendInvitationEmail}=require("../services/emailService");
           phoneNumber:true,
           role:true,
           subscriptionType:true,
-          numberOfTeamMembers:true,
           isProfileComplete:true
         }
       });
@@ -63,7 +62,6 @@ const {sendInvitationEmail}=require("../services/emailService");
           country: true,
           image: true,
           company: true,
-          numberOfTeamMembers:true
         }
       });
 
@@ -112,43 +110,75 @@ const {sendInvitationEmail}=require("../services/emailService");
     return res.status(403).json({ message: 'Business plan allows max 10 members.' });
   }
 
+  const team=await prisma.team.findFirst({where:{userId:adminId}});
   const token = uuid();
   const now=new Date();
-  let teamId;
 
-  if(admin.teamId){
-    teamId=admin.teamId;
-  }else{
-    teamId=uuid();
-    await prisma.user.update({
-      where:{
-        id:adminId
-      },
-      data:{
-        teamId
-      }
+  if(team){
+
+  if(admin.subscriptionType==="team"&&team.numberOfTeamMembers===5){
+    return res.status(400).json({
+      success:false,
+      message:"Team is full"
     })
-    await prisma.teammembers.create({
-      data:{
-        memberId:adminId,
-        adminId:adminId,
-        role:admin.role,
-        teamId,
-        isAdmin:true
-      }
+  }else if(admin.subscriptionType==="business"&&team.numberOfTeamMembers===10){
+    return res.status(400).json({
+      success:false,
+      message:"Team is full"
     })
   }
 
+  // crate invitaion 
   await prisma.teamInvite.create({ 
     data: {
       email,
       token,
-      adminId,
+      userId:adminId,
       role,
-      teamId,
+      teamId:team.id,
       expiresAt:  new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // expire date 7days
     },
   });
+  
+
+}else{
+
+  const teamId=uuid();
+
+ const newTeam=await prisma.team.create({
+
+  data:{
+    userId:adminId,
+    numberOfTeamMembers:1,
+    id:teamId
+  }
+
+ })
+   
+ await prisma.teamInvite.create({ 
+  data: {
+    email,
+    token,
+    userId:adminId,
+    role,
+    teamId:newTeam.id,
+    expiresAt:  new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // expire date 7days
+  },
+});
+
+ await prisma.teammembers.create({
+  data:{
+    isAdmin:true,
+    role:"Admin",
+    teamId:newTeam.id,
+    userId:adminId
+  }
+ })
+
+  
+}
+ 
+ 
 
  const status= await sendInvitationEmail(email,token,admin.firstName+" "+admin.lastName);
 
@@ -197,8 +227,22 @@ exports.acceptInvitation = async (req,res) => {
     }
 
     const admin =await prisma.user.findUnique({where:{
-      id:invitation.adminId
+      id:invitation.userId
     }})
+
+
+    const team=await prisma.team.findUnique({
+      where:{
+        id:invitation.teamId
+      }
+    });
+
+    if(!team){
+      return res.status(400).json({
+        success:false,
+        message:"team not found"
+      })
+    } 
 
 
 
@@ -215,29 +259,27 @@ exports.acceptInvitation = async (req,res) => {
     if (admin.subscriptionType === 'business' && admin.numberOfTeamMembers>= 10) {
       return res.status(403).json({ message: 'Business plan allows max 10 members.' });
     }
-    
-    
+
+      
     const user = await prisma.user.create({ 
       data: {
         email: invitation.email,
         role: invitation.role,
-        teamId:invitation.teamId
       },
     });
 
-    await prisma.user.update({
+    await prisma.team.update({
       where:{
-        id:admin.id
+        id:invitation.teamId
       },
       data:{
-        numberOfTeamMembers:admin.numberOfTeamMembers+1
+        numberOfTeamMembers:team.numberOfTeamMembers+1
       }
     })
 
     await prisma.teammembers.create({
       data:{
-        memberId:user.id,
-        adminId:admin.id,
+        userId:user.id,
         role:invitation.role,
         teamId:invitation.teamId,
         isAdmin:false
@@ -252,7 +294,7 @@ exports.acceptInvitation = async (req,res) => {
 
     return res.status(200).json({ success: true, message:"Invitation accepted successfully" });
   } catch (error) {
-    console.error('Error accepting invitation:', error.message);
+    console.error('Error accepting invitation:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -287,25 +329,43 @@ exports.getUserTransactions = async (req, res) => {
 
 exports.getTeamMembers = async (req, res) => {
   try {
-    const adminId = req.userId;
+    const userId = req.userId;
+
+
+
+    const user=await prisma.user.findFirst({where:{
+      id:userId
+    }})
+
+    if(!user){
+      return res.status(400).json({
+        success:false,
+        message:"Something went wrong"
+      })
+    }
 
     // First verify if the user is an admin
-    const admin = await prisma.user.findUnique({
-      where: { id: adminId },
-      select: { role: true }
-    });
+    const team=await prisma.team.findFirst({
+          where:{
+            userId
+          }
+    })
 
-    if (!admin || admin.role.toLowerCase() !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only admins can view team members'
-      });
+    const teamSize=user.subscriptionType==="pro"?1:(user.subscriptionType==="team"?5:10
+    )
+
+    if(!team){
+      return res.status(200).json({
+        success:true,
+        message:'No team found',
+        data:{membersData:[],teamSize,teamMembers:teamSize}
+      })
     }
-console.log(adminId)
+
     // Get all team members with their details in a single query
     const teamMembers = await prisma.teammembers.findMany({
       where: {
-        adminId: adminId
+         teamId:team.id
       },
       orderBy: {
         created_at: 'desc'
@@ -315,15 +375,16 @@ console.log(adminId)
 if(!teamMembers && teamMembers.length === 0){
   return res.json({
       success: false,
-      message: "No team members found"
+      message: "No team members found",
+      data:{membersData:[],teamSize,teamMembers:teamSize}
     });
 }
 
     // Transform the response to a cleaner format
-    const formattedTeamMembers =await Promise.all( teamMembers.map(async (member) => {
+    const membersData =await Promise.all( teamMembers.map(async (member) => {
       const memberData=await prisma.user.findUnique({
         where:{
-          id:member.memberId
+          id:member.userId
         },
         select:{
           firstName:true, 
@@ -342,13 +403,13 @@ if(!teamMembers && teamMembers.length === 0){
 
     // console.log(formattedTeamMembers);
 
-    res.json({
+ return  res.json({
       success: true,
-      data: formattedTeamMembers
+      data: {membersData,teamSize,teamMembers:membersData.length}
     });
   } catch (error) {
     console.error('Error fetching team members:', error);
-    res.status(500).json({
+  return  res.status(500).json({
       success: false,
       message: 'Error fetching team members',
       error: error.message

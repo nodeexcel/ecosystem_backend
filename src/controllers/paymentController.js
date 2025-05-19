@@ -181,6 +181,9 @@ exports.stripeWebhook = async (req, res) => {
                 subscriptionStartDate: new Date(),
                 subscriptionEndDate: new Date(new Date().setDate(new Date().getDate() + 30)),
                 subscriptionUpdatedAt: new Date(),
+                role:"Admin",
+                activeProfile:false,
+                isProfileComplete:false
               }
             });
 
