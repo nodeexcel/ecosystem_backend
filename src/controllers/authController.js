@@ -23,6 +23,13 @@ const fetch = require('node-fetch');
         });
       }
 
+      if(user.isDeleted){
+        return res.status(400).json({
+          message:"User is deactivated , Please reactivate the account .",
+          success:false,
+        })
+      }
+
       // If profile is not active, send OTP
       if (!user.activeProfile) {
         const otp = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
@@ -69,6 +76,10 @@ const fetch = require('node-fetch');
 
       if (!user) {
         return res.status(400).json({ message: 'Invalid credentials' });
+      }
+
+      if(user.isDeleted){
+        return res.status(400).json({message:"The account is deactivated, reactivate your account"});
       }
 
       const validPassword = await bcrypt.compare(password, user.password);
@@ -418,6 +429,157 @@ const fetch = require('node-fetch');
         success:false,
         message:error.message
       })
+    }
+  }
+
+  exports.deleteUser=async(req,res)=>{
+    try{
+
+      const userId=req.userId;
+
+
+      const user=await prisma.user.findUnique({
+        where:{
+          id:userId
+        }
+      });
+
+      if(!user){
+
+        return res.status(400).json({
+          success:false,
+          message:"No user found"
+        });     
+      }
+
+      if(user.isDeleted){
+        return res.status(400).json({
+          success:false,
+          message:"User already deleted ."
+        })
+      }
+
+
+      // handel admin user
+
+      if(user.role==="Admin"){
+
+        //get all the team of the user
+        const teams=await prisma.team.findMany({where:{
+           userId:user.id
+        }});
+
+         //get all the team member
+     await Promise.all(teams.map(async(team)=>{
+          const data=await prisma.teammembers.findMany({where:{     
+              teamId:team.id
+          }});
+
+          const members=data.filter((data)=>data.userId!=user.id); // filtering the admin
+         
+        await  Promise.all(members.map(async(member)=>{
+
+                const count=await prisma.teammembers.count({ //check the number of team the member associated 
+                  where:{
+                      userId:member.userId
+                  }
+                });
+
+                if(count==1){
+                  await prisma.user.update({
+                  where:{ id:member.userId},
+                  data:{
+                    isDeleted:true
+                  }
+                  }
+                )
+                }
+          }));
+           
+        }));
+           
+        // delete all the team and the members associated with the adminl
+        await Promise.all(teams.map(async(team)=>{
+             await prisma.teammembers.deleteMany({where:{
+              teamId:team.id
+             }});
+       
+        }));
+
+        await prisma.teamInvite.deleteMany({
+          where:{
+            userId
+          }
+        })
+        
+
+        await Promise.all(teams.map(async(team)=>{
+          await prisma.team.delete({where:{
+            id:team.id
+         }});
+        }));
+
+      
+
+      }
+      else{
+
+        // get the number of team he associated with 
+        const memberIn=await prisma.teammembers.findMany({
+          where:{
+             userId:user.id
+          }
+        })
+
+         // update the team member counts
+        await Promise.all(memberIn.map(async(data)=>{
+
+            await prisma.team.update({
+              where:{
+                id:data.teamId
+              },
+              data:{
+                numberOfTeamMembers:{
+                  decrement:1
+                }
+              }
+            })
+
+        }));
+
+        // delete from the member table 
+
+        await prisma.teammembers.deleteMany({where:{
+            userId
+        }});
+      }
+
+
+       // finally set user to deleted
+      await prisma.user.update({
+        where:{
+          id:userId
+        },
+        data:{
+          isDeleted:true,
+          refreshToken:null
+        }
+        
+      });
+
+      return res.json({
+        success:true,
+        message:"User deleted "
+
+      }); 
+    
+    }catch(error){
+      console.log("ERROR on deleting user : ", error.message)
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message
+      });
     }
   }
   

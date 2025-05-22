@@ -376,6 +376,26 @@ exports.updateSubscriptionWithProration = async (req, res) => {
 };
 
 
+exports.addCredits=async(req,res)=>{
+  try{
+
+    const {userId,credits}=req.body;
+
+    
+
+  }catch(error){
+
+    console.log("Error"+error.message);
+
+    res.status(500).json({
+      success:false,
+      message:"Something went wrong ."
+    })
+
+
+  }
+}
+
 
 
 

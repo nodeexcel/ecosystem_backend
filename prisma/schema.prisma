@@ -32,8 +32,10 @@ model User {
   subscriptionStartDate DateTime?            @db.Timestamp(6)
   subscriptionUpdatedAt DateTime?            @db.Timestamp(6)
   createdAt             DateTime?            @map("created_at") @db.Timestamp(6)
+  isDeleted             Boolean?
   appointment_setter    appointment_setter[]
   invite_tokens         teamInvite[]
+  knowledge_base        knowledge_base[]
   team                  team[]
   teammembers           teammembers[]
   transaction_history   transactionHistory[]
@@ -91,18 +93,18 @@ model alembic_version {
 }
 
 model appointment_setter {
-  id                      Int      @id @default(autoincrement())
-  agent_name              String   @db.VarChar
-  agent_personality       String   @db.VarChar
-  agent_language          String?  @db.VarChar
-  business_description    String   @db.VarChar
-  your_business_offer     String   @db.VarChar
-  qualification_questions String[] @db.VarChar
+  id                      Int              @id @default(autoincrement())
+  agent_name              String           @db.VarChar
+  agent_personality       String           @db.VarChar
+  agent_language          String?          @db.VarChar
+  business_description    String           @db.VarChar
+  your_business_offer     String           @db.VarChar
+  qualification_questions String[]         @db.VarChar
   sequence                Json
-  objective_of_the_agent  String   @db.VarChar
-  calendar_choosed        String?  @db.VarChar
-  webpage_link            String?  @db.VarChar
-  webpage_type            String?  @db.VarChar
+  objective_of_the_agent  String           @db.VarChar
+  calendar_choosed        String?          @db.VarChar
+  webpage_link            String?          @db.VarChar
+  webpage_type            String?          @db.VarChar
   reply_min_time          Int
   reply_max_time          Int
   is_followups_enabled    Boolean?
@@ -111,7 +113,8 @@ model appointment_setter {
   directness              Int
   is_active               Boolean?
   user_id                 Int?
-  users                   User?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                   User?            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lead_analytics          lead_analytics[]
 
   @@index([id], map: "ix_appointment_setter_id")
 }
@@ -134,4 +137,80 @@ model team {
   invite_tokens       teamInvite[]
   users               User?         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   teammembers         teammembers[]
+}
+
+model appointment_agent_leads {
+  id             Int              @id @default(autoincrement())
+  lead_id        String?          @unique @db.VarChar
+  lead_analytics lead_analytics[]
+
+  @@index([id], map: "ix_appointment_agent_leads_id")
+}
+
+model checkpoint_blobs {
+  thread_id     String
+  checkpoint_ns String @default("")
+  channel       String
+  version       String
+  type          String
+  blob          Bytes?
+
+  @@id([thread_id, checkpoint_ns, channel, version])
+  @@index([thread_id])
+}
+
+model checkpoint_migrations {
+  v Int @id
+}
+
+model checkpoint_writes {
+  thread_id     String
+  checkpoint_ns String  @default("")
+  checkpoint_id String
+  task_id       String
+  idx           Int
+  channel       String
+  type          String?
+  blob          Bytes
+  task_path     String  @default("")
+
+  @@id([thread_id, checkpoint_ns, checkpoint_id, task_id, idx])
+  @@index([thread_id])
+}
+
+model checkpoints {
+  thread_id            String
+  checkpoint_ns        String  @default("")
+  checkpoint_id        String
+  parent_checkpoint_id String?
+  type                 String?
+  checkpoint           Json
+  metadata             Json    @default("{}")
+
+  @@id([thread_id, checkpoint_ns, checkpoint_id])
+  @@index([thread_id])
+}
+
+model knowledge_base {
+  id        Int     @id @default(autoincrement())
+  data      String? @db.VarChar
+  data_type String? @db.VarChar
+  user_id   Int?
+  users     User?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id], map: "ix_knowledge_base_id")
+}
+
+model lead_analytics {
+  id                      Int                      @id @default(autoincrement())
+  chat_history            Json[]
+  thread_id               String?                  @unique @db.VarChar
+  agent_id                Int?
+  lead_id                 Int?
+  agent_is_enabled        Boolean?
+  status                  String?                  @db.VarChar
+  appointment_setter      appointment_setter?      @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
+  appointment_agent_leads appointment_agent_leads? @relation(fields: [lead_id], references: [id], onUpdate: NoAction)
+
+  @@index([id], map: "ix_lead_analytics_id")
 }

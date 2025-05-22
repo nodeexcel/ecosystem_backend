@@ -23,6 +23,8 @@ router.post('/google-login', authController.googleLogin);
 
 router.post("/refresh-token",authController.refreshAccessToken);
 
+router.delete("/delete-user",authMiddleware,authController.deleteUser);
+
 router.get('/logout',authMiddleware,authController.logOut); 
 
 

@@ -7,6 +7,7 @@ const {sendInvitationEmail}=require("../services/emailService");
       const user = await prisma.user.findUnique({
         where: { id: req.userId },
         select:{
+          id:true,
           firstName:true,
           lastName:true,
           company:true,
@@ -358,7 +359,7 @@ exports.getTeamMembers = async (req, res) => {
       return res.status(200).json({
         success:true,
         message:'No team found',
-        data:{membersData:[],teamSize,teamMembers:teamSize}
+        data:{membersData:[],teamSize,teamMembers:0}
       })
     }
 
