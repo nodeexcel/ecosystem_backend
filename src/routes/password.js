@@ -11,4 +11,4 @@ router.post('/send-otp', passwordController.sentOtp);
 
 router.post('/set-new', authMiddleware,passwordController.setNewPassword);
 
-module.exports = router; 
+module.exports = router;

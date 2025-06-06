@@ -19,17 +19,17 @@ app.use((req, res, next) => {
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the KIN Backend API' });
 });
-
 // Import and use routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const paymentRoutes = require('./routes/payments');
 const passwordRoutes = require('./routes/password');
-
+const contactRoutes = require('./routes/contacts');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/password', passwordRoutes);
+app.use('/api/contacts', contactRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

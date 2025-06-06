@@ -26,7 +26,7 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB limit
   },
   fileFilter: function (req, file, cb) {
-    const filetypes = /jpeg|jpg|png|gif/;
+    const filetypes = /jpeg|jpg|png|gif|csv/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = filetypes.test(file.mimetype);
 
@@ -42,7 +42,7 @@ exports.handleImageUpload = async (req, res, next) => {
   try {
     // If no file is uploaded, proceed to next middleware
     if (!req.file) {
-      return next();
+      return next();3
     }
 
     // Upload image to Cloudinary

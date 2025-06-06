@@ -31,9 +31,10 @@ model User {
   subscriptionEndDate   DateTime?            @db.Timestamp(6)
   subscriptionStartDate DateTime?            @db.Timestamp(6)
   subscriptionUpdatedAt DateTime?            @db.Timestamp(6)
-  createdAt             DateTime?            @map("created_at") @db.Timestamp(6)
+  createdAt             DateTime?            @map( "created_at") @db.Timestamp(6)
   isDeleted             Boolean?
   appointment_setter    appointment_setter[]
+  email_campaign        email_campaign[]
   invite_tokens         teamInvite[]
   knowledge_base        knowledge_base[]
   team                  team[]
@@ -96,7 +97,6 @@ model appointment_setter {
   id                      Int              @id @default(autoincrement())
   agent_name              String           @db.VarChar
   agent_personality       String           @db.VarChar
-  agent_language          String?          @db.VarChar
   business_description    String           @db.VarChar
   your_business_offer     String           @db.VarChar
   qualification_questions String[]         @db.VarChar
@@ -104,15 +104,16 @@ model appointment_setter {
   objective_of_the_agent  String           @db.VarChar
   calendar_choosed        String?          @db.VarChar
   webpage_link            String?          @db.VarChar
-  webpage_type            String?          @db.VarChar
-  reply_min_time          Int
-  reply_max_time          Int
   is_followups_enabled    Boolean?
   follow_up_details       Json?
   emoji_frequency         Int
-  directness              Int
   is_active               Boolean?
   user_id                 Int?
+  gender                  String?          @db.VarChar
+  age                     Int
+  whatsapp_number         String?          @db.VarChar
+  prompt                  String           @db.VarChar
+  agent_language          String[]         @db.VarChar
   users                   User?            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   lead_analytics          lead_analytics[]
 
@@ -134,14 +135,17 @@ model team {
   id                  String        @id @db.VarChar
   userId              Int?
   numberOfTeamMembers Int?
+  credits             Int?
+  contacts            contacts[]
   invite_tokens       teamInvite[]
+  lists               lists[]
   users               User?         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   teammembers         teammembers[]
 }
 
 model appointment_agent_leads {
   id             Int              @id @default(autoincrement())
-  lead_id        String?          @unique @db.VarChar
+  lead_id        Int?             @unique
   lead_analytics lead_analytics[]
 
   @@index([id], map: "ix_appointment_agent_leads_id")
@@ -196,6 +200,7 @@ model knowledge_base {
   data      String? @db.VarChar
   data_type String? @db.VarChar
   user_id   Int?
+  path      String? @db.VarChar
   users     User?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([id], map: "ix_knowledge_base_id")
@@ -209,8 +214,98 @@ model lead_analytics {
   lead_id                 Int?
   agent_is_enabled        Boolean?
   status                  String?                  @db.VarChar
+  created_at              DateTime?                @db.Date
+  updated_at              DateTime?                @db.Date
   appointment_setter      appointment_setter?      @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
   appointment_agent_leads appointment_agent_leads? @relation(fields: [lead_id], references: [id], onUpdate: NoAction)
 
   @@index([id], map: "ix_lead_analytics_id")
+}
+
+model email_campaign {
+  id                         Int             @id @default(autoincrement())
+  campaign_title             String          @db.VarChar
+  campaign_objective         String          @db.VarChar
+  main_subject               String          @db.VarChar
+  cta_type                   String          @db.VarChar
+  list_of_target             String[]        @db.VarChar
+  desired_tone               String          @db.VarChar
+  language                   String          @db.VarChar
+  send_time_window           String          @db.VarChar
+  start_date                 DateTime        @db.Date
+  frequency                  String[]        @db.VarChar
+  include_brainai            Boolean?
+  include_branding           Boolean?
+  custom_prompt              String?         @db.VarChar
+  text_length                String          @db.VarChar
+  product_or_service_feature String          @db.VarChar
+  review                     Boolean?
+  calender_choosed           String?         @db.VarChar
+  url                        String          @db.VarChar
+  user_id                    Int?
+  is_draft                   Boolean?
+  status                     String?         @db.VarChar
+  is_active                  Boolean?
+  users                      User?           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  email_content              email_content[]
+
+  @@index([id], map: "ix_email_campaign_id")
+}
+
+model contact_lists {
+  id        Int       @id @default(autoincrement())
+  contactid Int?
+  lists_id  Int?
+  contacts  contacts? @relation(fields: [contactid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  lists     lists?    @relation(fields: [lists_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id], map: "ix_contact_lists_id")
+}
+
+model contacts {
+  id               Int             @id @default(autoincrement())
+  firstName        String?         @db.VarChar
+  lastName         String?         @db.VarChar
+  businessName     String?         @db.VarChar
+  companyName      String?         @db.VarChar
+  phone            String?         @db.VarChar
+  email            String?         @db.VarChar
+  created          String?         @db.VarChar
+  lastActivity     String?         @db.VarChar
+  tags             String?         @db.VarChar
+  additionalEmails String?         @db.VarChar
+  additionalPhones String?         @db.VarChar
+  created_at       DateTime?       @db.Timestamp(6)
+  team_id          String?         @db.VarChar
+  status           String?         @db.VarChar
+  contact_lists    contact_lists[]
+  team             team?           @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id], map: "ix_contacts_id")
+}
+
+model email_content {
+  id             Int             @id @default(autoincrement())
+  content        String          @db.VarChar
+  is_approved    Boolean?
+  campaign_id    Int?
+  scheduled_date DateTime        @db.Date
+  scheduled_time String          @db.VarChar
+  is_sent        Boolean?
+  status         String?         @db.VarChar
+  email_campaign email_campaign? @relation(fields: [campaign_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id], map: "ix_email_content_id")
+}
+
+model lists {
+  id            Int             @id @default(autoincrement())
+  listName      String?         @db.VarChar
+  channel       String?         @db.VarChar
+  created_at    DateTime?       @db.Timestamp(6)
+  team_id       String?         @db.VarChar
+  contact_lists contact_lists[]
+  team          team?           @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id], map: "ix_lists_id")
 }

@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const {v4:uuid}=require("uuid");
 const {sendInvitationEmail}=require("../services/emailService");
+
   // Get user profile
   exports.getProfile= async (req, res) => {
     try {
@@ -75,7 +76,6 @@ const {sendInvitationEmail}=require("../services/emailService");
       res.status(500).json({ message: 'Error updating profile' });
     }
   }
-
 
  exports.inviteMember=async (req, res) =>{
 
@@ -202,7 +202,6 @@ const {sendInvitationEmail}=require("../services/emailService");
 }
 }
 
-
 exports.acceptInvitation = async (req,res) => {
   try {
     const {token}=req.body;
@@ -266,6 +265,9 @@ exports.acceptInvitation = async (req,res) => {
       data: {
         email: invitation.email,
         role: invitation.role,
+        activeProfile:false,
+        isProfileComplete:false,
+        subscriptionType:admin.subscriptionType,
       },
     });
 
@@ -283,7 +285,7 @@ exports.acceptInvitation = async (req,res) => {
         userId:user.id,
         role:invitation.role,
         teamId:invitation.teamId,
-        isAdmin:false
+        isAdmin:false,
       }
     });
 
@@ -299,7 +301,6 @@ exports.acceptInvitation = async (req,res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 exports.getUserTransactions = async (req, res) => {
   try {
@@ -345,23 +346,44 @@ exports.getTeamMembers = async (req, res) => {
       })
     }
 
+
+    const teamSize=user.subscriptionType==="pro"?1:(user.subscriptionType==="team"?5:10);
+  
+
     // First verify if the user is an admin
-    const team=await prisma.team.findFirst({
+    let team=await prisma.team.findFirst({
           where:{
             userId
           }
     })
 
-    const teamSize=user.subscriptionType==="pro"?1:(user.subscriptionType==="team"?5:10
-    )
-
     if(!team){
-      return res.status(200).json({
-        success:true,
-        message:'No team found',
-        data:{membersData:[],teamSize,teamMembers:0}
-      })
+       const member=await prisma.teammembers.findFirst({
+        where:{
+          userId:userId
+        }
+       })
+
+   
+
+       if(!member){
+          return res.status(200).json({
+            success:true,
+            message:'No team found',
+            data:{membersData:[],teamSize,teamMembers:0}
+          })
+        
+       }
+       team=await prisma.team.findFirst({
+        where:{
+          id:member.teamId
+        }
+       })
     }
+
+
+
+
 
     // Get all team members with their details in a single query
     const teamMembers = await prisma.teammembers.findMany({
@@ -404,9 +426,10 @@ if(!teamMembers && teamMembers.length === 0){
 
     // console.log(formattedTeamMembers);
 
+
  return  res.json({
       success: true,
-      data: {membersData,teamSize,teamMembers:membersData.length}
+      data: {membersData,teamSize,teamMembers:membersData.length,credits:team.credits,teamId:team.id}
     });
   } catch (error) {
     console.error('Error fetching team members:', error);
@@ -417,3 +440,4 @@ if(!teamMembers && teamMembers.length === 0){
     });
   }
 };
+
