@@ -80,10 +80,155 @@ exports.uploadContact = async (req, res) => {
       });
     }
   };
+
+exports.addContact=async(req,res)=>{
+
+      try{
+
+        const userId=req.userId;
+
+        if(!userId){
+          return res.status(401).json({
+            success:false,
+            message:"Unauthorized"
+          })
+        }
+
+        const {firstName, lastName, businessName, companyName, phone, email, tags, additionalEmails, additionalPhones} = req.body;
+
+        if(firstName==="" && lastName==="" && companyName==="" && phone==="" && email===""){
+          return res.status(400).json({
+            success:false,
+            message:"Please provide contact detail"
+          })
+        }
+       const team = await prisma.team.findFirst({
+          where: { userId },
+          select: { id: true }
+        });
+         await prisma.contacts.create({
+          data: {
+            firstName: firstName || '',
+            lastName: lastName || '',
+            businessName: businessName || '',
+            companyName: companyName || '',
+            phone: phone || '',
+            email: email || '',
+            tags: tags || '',
+            additionalEmails: additionalEmails || '',
+            additionalPhones: additionalPhones || '',         
+            team_id: team.id,
+            created_at: new Date()
+          }
+        });
+
+          return res.status(201).json({
+            success: true,
+            message: "Contact added successfully"
+          });
+
+
+      }catch(error){
+        console.log("Error on adding contact:", error.message);
+        return res.status(500).json({
+          success: false,
+          message: "Something went wrong."
+        });
+      }
+  }
+  
+exports.updateContact=async(req,res)=>{
+      try{
+
+        const userId=req.userId;
+        const {contactId}=req.body;
+
+        if(!contactId){
+          return res.status(400).json({
+            success:false,
+            message:"Contact ID is required"
+          })
+        }
+
+        const {firstName, lastName, businessName, companyName, phone, email, tags, additionalEmails, additionalPhones} = req.body;
+
+        if(firstName==="" && lastName==="" && companyName==="" && phone==="" && email===""){
+          return res.status(400).json({
+            success:false,
+            message:"Please provide contact detail"
+          })
+        }
+
+        const team = await prisma.teammembers.findFirst({ where: { userId } });
+
+        const contact=await prisma.contacts.update({
+          where: {
+            id: parseInt(contactId),
+            team_id: team.teamId 
+          },
+          data: {
+            firstName: firstName,
+            lastName: lastName ,
+            companyName: companyName ,
+            phone: phone ,
+            email: email ,         
+          }
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: "Contact updated successfully",
+          contact
+        });
+      }
+      catch(error){
+        console.log("Error on editing contact:", error.message);
+        return res.status(500).json({
+          success: false,
+          message: "Something went wrong."
+        });
+      }
+  }
+
+ exports.deleteContact=async (req, res) => {
+    try {
+      const userId = req.userId;
+      const  contactId  = req.params.id;
+      if (!contactId) {
+        return res.status(400).json({
+          success: false,
+          message: "Contact ID is required"
+        });   
+      }
+
+      const team = await prisma.teammembers.findFirst({ where: { userId } });
+
+      const contact=await prisma.contacts.delete({
+        where: {
+          id: parseInt(contactId),
+          team_id: team.teamId 
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Contact deleted successfully",
+        contact
+      });
+
+    } catch (error) {
+      console.log("Error on deleting contact:", error.message);     
+      return res.status(500).json({
+        success: false,
+        message: "Something went wrong."
+      });
+    }
+
+  }
   
   exports.createList = async (req, res) => {
     try {
-      const { listName, channel} = req.body;
+      const { listName, channel,description} = req.body;
       const userId=req.userId;
   
       if(!listName){
@@ -222,6 +367,14 @@ exports.uploadContact = async (req, res) => {
          const userId=req.userId; 
   
          const {page,rows}=req.query;
+
+
+           if(!rows||!page){
+          return res.status(400).json({
+            success:false,
+            message:"Please provide page and rows"
+          })
+         }
   
          const team=await prisma.teammembers.findFirst({
           where:{
@@ -246,7 +399,7 @@ exports.uploadContact = async (req, res) => {
           orderBy:{
             created_at:"desc"
           }
-         })
+         })      
   
          const finalContacts=contacts.slice((page-1)*rows,page*rows);
          return res.status(200).json({
@@ -268,7 +421,6 @@ exports.uploadContact = async (req, res) => {
   
   
   }
-  
   
   exports.getLists=async(req,res)=>{
      try{
@@ -301,6 +453,7 @@ exports.uploadContact = async (req, res) => {
   
   
            data.push({
+            id:list.id,
             listName:list.listName,
             activeContacts:count,
             channel:list.channel,
@@ -322,3 +475,159 @@ exports.uploadContact = async (req, res) => {
       })
      }
   }
+
+  exports.updateList=async(req,res)=>{ 
+      try{
+        
+        const userId=req.userId;
+        const {listName, channel,description,listId} = req.body;
+        
+
+        if(!listName || !listId){
+          return res.status(400).json({
+            success:false,
+            message:"List name and ID are required"
+          })
+        }
+
+        const team = await prisma.teammembers.findFirst({ where: { userId } });
+
+        const list=await prisma.lists.update({
+          where: {
+            id: parseInt(listId),
+            team_id: team.teamId 
+          },
+          data: {
+            listName,
+            channel,
+            // description: description || '',
+          }
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: "List updated successfully",
+          list
+        });
+
+      }catch(error){
+        console.log("Error on editing contact:", error.message);
+        return res.status(500).json({
+          success: false,
+          message: "Something went wrong."
+        });
+      }
+} 
+
+exports.deleteList=async(req,res)=>{ 
+
+   try{
+
+    const userId=req.userId;
+    const listId=req.params.id;
+
+    if(!listId){
+      return res.status(400).json({
+        success:false,
+        message:"List ID is required"
+      })
+    }
+
+    const team = await prisma.teammembers.findFirst({ where: { userId } });
+
+    const listExists = await prisma.lists.findFirst({
+      where: {
+        id: parseInt(listId),
+        team_id: team.teamId 
+      }
+    });
+    if (!listExists) {
+      return res.status(404).json({
+        success: false,
+        message: "List not found"
+      });
+    }
+
+    const list=await prisma.lists.delete({
+      where: {
+        id: parseInt(listId),
+        team_id: team.teamId 
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "List deleted successfully",
+      list
+    });
+
+   }catch(error){
+    console.log("Error on deleting list:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong."
+    });
+   }
+}
+
+exports.duplicateList=async(req,res)=>{ 
+   try{
+    const {listId}=req.body;
+    const userId=req.userId;
+    if(!listId){
+      return res.status(400).json({
+        success:false,
+        message:"List ID is required"
+      })
+    }
+    const team = await prisma.teammembers.findFirst({ where: { userId } });
+    const list=await prisma.lists.findFirst({
+      where:{
+        id:parseInt(listId),
+        team_id:team.teamId
+      }
+    });
+    if(!list){
+      return res.status(404).json({
+        success:false,
+        message:"List not found"
+      })
+    }
+    const newList=await prisma.lists.create({
+      data:{
+        listName:list.listName,
+        channel:list.channel,
+        team_id:team.teamId,
+        created_at:new Date()
+      }
+    });
+
+    const contactsInList=await prisma.contact_lists.findMany({
+      where:{
+        lists_id:list.id
+      }
+    });
+
+    await Promise.all(contactsInList.map(async(contact)=>{
+      await prisma.contact_lists.create({
+        data:{
+          contactid:contact.contactid,
+          lists_id:newList.id
+        }
+      })
+    }));
+    return res.status(200).json({
+      success: true,
+      message: "List duplicated successfully",
+      newList
+    });
+
+   }catch(error){
+    console.log("Error on duplicating list:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong."
+    });
+   }
+
+}

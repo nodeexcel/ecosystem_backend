@@ -9,10 +9,22 @@ router.post('/upload-contacts',upload,authMiddleware,contactController.uploadCon
 
 router.post('/create-list',authMiddleware,contactController.createList);
 
+router.post('/add-contact',authMiddleware,contactController.addContact);
+
+router.delete('/delete-contact/:id',authMiddleware,contactController.deleteContact);
+
+router.post('/update-contact',authMiddleware,contactController.updateContact);
+
 router.post("/add-contacts-to-list",authMiddleware,contactController.addContactToList);
+
+router.post("/update-list",authMiddleware,contactController.updateList);
 
 router.get("/get-contact-list",authMiddleware,contactController.getContactList);
 
 router.get("/get-lists",authMiddleware,contactController.getLists);
+
+router.post("/duplicate-list",authMiddleware,contactController.duplicateList);
+
+router.delete("/delete-list/:id",authMiddleware,contactController.deleteList);
 
 module.exports = router;
