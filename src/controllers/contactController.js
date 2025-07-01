@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const csvParser =require("csv-parser");
 const fs=require('fs');
+const { promiseHooks } = require('v8');
 exports.uploadContact = async (req, res) => {
     try {
       const userId = req.userId;
@@ -34,13 +35,16 @@ exports.uploadContact = async (req, res) => {
       });
 
       //  fs.unlink(filePath);
+
   
       // ⬇️ Insert valid contacts
       await Promise.all(
         results.map(async (data) => {
-          if (!data["First Name"] && !data["Last Name"] && !data["Email"] && !data["Phone"]) {
+          if (!data["First Name"] && !data["Last Name"] && !data["Email"] && !data["Phone"]&&!data["Country Code"]) {
             return null;
           }
+
+       
   
           await prisma.contacts.create({
             data: {
@@ -56,7 +60,8 @@ exports.uploadContact = async (req, res) => {
               additionalEmails: data["Additional Emails"] || '',
               additionalPhones: data["Additional Phones"] || '',
               team_id: team.id,
-              created_at:new Date()
+              created_at:new Date(),
+              countryCode:data["Country Code"]||'',
             }
           });
         })
@@ -94,12 +99,13 @@ exports.addContact=async(req,res)=>{
           })
         }
 
-        const {firstName, lastName, businessName, companyName, phone, email, tags, additionalEmails, additionalPhones} = req.body;
+        const {firstName, lastName, businessName, companyName, phone, email, tags, additionalEmails, additionalPhones,countryCode} = req.body;
 
         if(firstName==="" && lastName==="" && companyName==="" && phone==="" && email===""){
           return res.status(400).json({
             success:false,
-            message:"Please provide contact detail"
+            // message:"Please provide contact detail"
+            message:req.t('pleaseProvideContactDetail')
           })
         }
        const team = await prisma.team.findFirst({
@@ -118,13 +124,15 @@ exports.addContact=async(req,res)=>{
             additionalEmails: additionalEmails || '',
             additionalPhones: additionalPhones || '',         
             team_id: team.id,
+            countryCode:countryCode||'',
             created_at: new Date()
           }
         });
 
           return res.status(201).json({
             success: true,
-            message: "Contact added successfully"
+            // message: "Contact added successfully"
+            message:req.t('contactAdded')
           });
 
 
@@ -132,26 +140,23 @@ exports.addContact=async(req,res)=>{
         console.log("Error on adding contact:", error.message);
         return res.status(500).json({
           success: false,
-          message: "Something went wrong."
+          // message: "Something went wrong."
+          message:req.t('somethingWentWrong')
         });
       }
   }
   
 exports.updateContact=async(req,res)=>{
       try{
-
         const userId=req.userId;
         const {contactId}=req.body;
-
         if(!contactId){
           return res.status(400).json({
             success:false,
             message:"Contact ID is required"
           })
         }
-
-        const {firstName, lastName, businessName, companyName, phone, email, tags, additionalEmails, additionalPhones} = req.body;
-
+        const {firstName, lastName, businessName, companyName, phone, email, tags, additionalEmails, additionalPhones,countryCode} = req.body;
         if(firstName==="" && lastName==="" && companyName==="" && phone==="" && email===""){
           return res.status(400).json({
             success:false,
@@ -171,7 +176,8 @@ exports.updateContact=async(req,res)=>{
             lastName: lastName ,
             companyName: companyName ,
             phone: phone ,
-            email: email ,         
+            email: email ,  
+            countryCode:countryCode       
           }
         });
 
@@ -193,22 +199,29 @@ exports.updateContact=async(req,res)=>{
  exports.deleteContact=async (req, res) => {
     try {
       const userId = req.userId;
-      const  contactId  = req.params.id;
-      if (!contactId) {
-        return res.status(400).json({
-          success: false,
-          message: "Contact ID is required"
-        });   
-      }
+      const { contactIds } = req.body
 
       const team = await prisma.teammembers.findFirst({ where: { userId } });
 
-      const contact=await prisma.contacts.delete({
-        where: {
-          id: parseInt(contactId),
-          team_id: team.teamId 
+      const contact=await Promise.all(contactIds.map(async(contactId)=>{
+
+        const check=await prisma.contacts.findUnique({where:{
+              id:contactId
+        }});
+
+        if(!check){
+              return;
         }
-      });
+
+       const data= await prisma.contacts.delete({
+          where: {
+            id: parseInt(contactId),
+            team_id: team.teamId 
+          }
+        });
+        return data;
+      }))
+  
 
       return res.status(200).json({
         success: true,
@@ -290,66 +303,54 @@ exports.updateContact=async(req,res)=>{
   
   exports.addContactToList = async (req, res) => {
     try {
-      const userId = req.userId;
-      const { listName, contactsId, channel } = req.body;
+      const { listId, contactIds } = req.body;
+
   
-      const team = await prisma.teammembers.findFirst({
-        where: { userId },
-        select: { teamId: true }
-      });
-  
-      if (!team) {
-        return res.status(404).json({ success: false, message: "Team not found" });
-      }
-  
-      let list = await prisma.lists.findFirst({
-        where: {
-          AND:[{ team_id: team.teamId},
-            {listName}]   
-        }
-      });
-  
-      if (!list) {
-        list = await prisma.lists.create({
-          data: {
-            listName,
-            channel,
-            team_id: team.teamId,
-            created_at:new Date()
-          }
-        });
-      }
-      console.log("NEW LIST ",list);
-  
-      await Promise.all(contactsId.map(async (data) => {
-        const contact = await prisma.contacts.findUnique({
-          where: {
-            id: parseInt(data),
-          }
-        });
-  
-        if (!contact) return;
-  
-        const contactInList = await prisma.contact_lists.findFirst({
-          where: {
-            contactid: parseInt(data),
-            lists_id: list.id
-          }
-        });
-  
-        if (contactInList) return;
-  
-        await prisma.contact_lists.create({
-          data: {
-            contactid:parseInt(data) ,
-            lists_id: list.id
-          }
-        });
-      }));
-  
+       if(!listId||!contactIds||!Array.isArray(contactIds)){
+         return res.status(400).json({
+          success:false,
+          message:"Something is missing"
+         });
+       }
+
+
+       const list=await prisma.lists.findUnique({where:{
+            id:listId
+       }});
+
+       if(!list){
+        return res.status(404).json({
+          success:false,
+          message:"List not found"
+        })
+       }
+
+       await Promise.all(contactIds.map(async(contactId)=>{
+
+                 const check = await prisma.contact_lists.findFirst({where:{
+                          contactid:contactId,
+                          lists_id:listId
+                 }});
+
+                 if(check){
+                  return;
+                 }
+
+                 await prisma.contact_lists.create(
+                   { data:{
+
+                      contactid:contactId,
+                      lists_id:listId,                   
+                    }}
+                 );
+         
+          
+       }));
+
+
       return res.status(200).json({
         success: true,
-        message: "Contacts added successfully"
+        message: "Contacts added successfully",
       });
   
     } catch (error) {
@@ -360,121 +361,106 @@ exports.updateContact=async(req,res)=>{
       });
     }
   };
-  
-  exports.getContactList=async(req,res)=>{
-     try{
-    
-         const userId=req.userId; 
-  
-         const {page,rows}=req.query;
 
 
-           if(!rows||!page){
-          return res.status(400).json({
-            success:false,
-            message:"Please provide page and rows"
-          })
-         }
-  
-         const team=await prisma.teammembers.findFirst({
-          where:{
-             userId
-          },
-          select:{
-            teamId:true,
-          }
-         });
-         if(!team){
-          return res.status(404).json({
-            success:false,
-            message:"Team not found"
-          })
-         }
-  
-      const  teamId=team.teamId
-         const contacts=await prisma.contacts.findMany({
-          where:{
-            team_id:teamId
-          },
-          orderBy:{
-            created_at:"desc"
-          }
-         })      
-  
-         const finalContacts=contacts.slice((page-1)*rows,page*rows);
-         return res.status(200).json({
-          success:true,
-          contacts:finalContacts,
-          totalContacts:contacts.length,
-          totalPages:Math.ceil(contacts.length/rows),
-          currentPage:page
-         })
-         
-     }catch(error){
-  
-       console.log("ERROR GET CONTACTS : ", error);
-       return res.status(500).json({
-        success:false,
-        message:"Something went wrong"
-       })
-     }
-  
-  
-  }
-  
-  exports.getLists=async(req,res)=>{
-     try{
-  
-      const userId=req.userId;
-  
-  
-      const team=await prisma.teammembers.findFirst({
-        where:{
-          userId
-        }
+
+  exports.getContactList = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { page = 1, rows = 10, search = "", channel = "all" } = req.query;
+
+    const numericPage = parseInt(page);
+    const numericRows = parseInt(rows);
+
+    if (!numericRows || !numericPage) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide page and rows",
       });
-  
-      const lists=await prisma.lists.findMany({
-        where:{
-            team_id:team.teamId
-        }
+    }
+
+    const team = await prisma.teammembers.findFirst({
+      where: { userId },
+      select: { teamId: true },
+    });
+
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
       });
-  
-      const data=[];
-  
-  
-      await Promise.all(lists.map(async(list)=>{
-        
-           const count=await prisma.contact_lists.count({
-            where:{
-              lists_id:list.id,
-            }
-           })
-  
-  
-           data.push({
-            id:list.id,
-            listName:list.listName,
-            activeContacts:count,
-            channel:list.channel,
-            createdDate:list.created_at,
-           })
-            
-      }));
-  
-      return res.status(200).json({
-        success:true,
-        lists:data
-      })
-  
-     }catch(error){
-      console.log("ERROR : ",error.message);
-      res.status(500).json({
-        success:false,
-        message:"Something went wrong"  
-      })
-     }
+    }
+
+    const teamId = team.teamId;
+
+    // Build where filter
+    const whereFilter = {
+      team_id: teamId,
+    };
+
+    // Add search filter on name only
+    if (search) {
+      const searchLower = search.toLowerCase();
+      whereFilter.OR = [
+        {
+          firstName: {
+            contains: searchLower,
+            mode: "insensitive",
+          },
+        },
+        {
+          lastName: {
+            contains: searchLower,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    // Add channel filter
+    if (channel === "email") {
+      whereFilter.email = { not: null };
+    } else if (channel === "phone") {
+      whereFilter.phone = { not: null };
+    }
+
+    const contacts = await prisma.contacts.findMany({
+      where: whereFilter,
+      orderBy: { created_at: "desc" },
+    });
+
+    const totalContacts = contacts.length;
+    const totalPages = Math.ceil(totalContacts / numericRows);
+
+    let currentPage = numericPage;
+    let start = (currentPage - 1) * numericRows;
+    let end = start + numericRows;
+
+    // If out-of-bounds, reset to page 1
+    if (start >= totalContacts) {
+      currentPage = 1;
+      start = 0;
+      end = numericRows;
+    }
+
+    const finalContacts = contacts.slice(start, end);
+
+    return res.status(200).json({
+      success: true,
+      contacts: finalContacts,
+      totalContacts,
+      totalPages,
+      currentPage,
+      message:req.t("getContact")
+    });
+  } catch (error) {
+    console.error("ERROR GET CONTACTS:", error);
+    return res.status(500).json({
+      success: false,
+      message: req.t("somethingWentWrong"),
+    });
   }
+};
 
   exports.updateList=async(req,res)=>{ 
       try{
@@ -518,6 +504,75 @@ exports.updateContact=async(req,res)=>{
         });
       }
 } 
+
+exports.getLists = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { search = "", channel = "all" } = req.query;
+
+    const team = await prisma.teammembers.findFirst({
+      where: { userId },
+    });
+
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
+      });
+    }
+
+    // Build filter
+    const listFilter = {
+      team_id: team.teamId,
+    };
+
+    if (channel !== "all") {
+      listFilter.channel = channel;
+    }
+
+    if (search) {
+      listFilter.listName = {
+        contains: search,
+        mode: "insensitive",
+      };
+    }
+
+    const lists = await prisma.lists.findMany({
+      where: listFilter,
+      orderBy: { created_at: "desc" },
+    });
+
+    // Fetch contact count for each list
+    const data = await Promise.all(
+      lists.map(async (list) => {
+        const count = await prisma.contact_lists.count({
+          where: {
+            lists_id: list.id,
+          },
+        });
+
+        return {
+          id: list.id,
+          listName: list.listName,
+          activeContacts: count,
+          channel: list.channel,
+          createdDate: list.created_at,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      lists: data,
+    });
+  } catch (error) {
+    console.error("ERROR:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+    });
+  }
+};
 
 exports.deleteList=async(req,res)=>{ 
 
@@ -630,4 +685,110 @@ exports.duplicateList=async(req,res)=>{
     });
    }
 
+}
+
+exports.viewContactList=async(req,res)=>{
+  try{
+
+    const {listId}=req.params;
+  //  console.log(req.params);
+
+    if(!listId){
+      return res.status(404).json({
+        message:"List Not found"
+      })
+    }
+
+    const contactIds=await prisma.contact_lists.findMany({where:{
+      lists_id:parseInt(listId)
+    }});
+
+
+    const contacts=await Promise.all(contactIds.map(async(data)=>{
+
+      const contact=await prisma.contacts.findUnique({where:{
+        id:data.contactid
+      }})
+
+      return contact
+
+    }))
+
+
+    if(!contacts){
+      return res.status(200).json({
+        success:true,
+          contacts:[],
+          message:"data not found for this list"
+      });
+    }
+
+    return res.status(200).json({
+      success:true,
+      contacts,
+      message:"List fetch successfully"
+    })
+
+
+  }catch(error){
+    console.log("ERROR ",error.message);
+    return res.status(500).json({
+      success:false,
+      message:error.message
+    })
+  }
+
+
+}
+
+
+exports.removeContactFromList = async (req, res) => {
+  try {
+    const { listId, contactId } = req.body;
+
+    if (!listId || !contactId || !Array.isArray(contactId) || contactId.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "listId and contactId array must be provided"
+      });
+    }
+
+    const removedContacts = [];
+    for (const id of contactId) {
+      const contactInList = await prisma.contact_lists.findFirst({
+        where: {
+          lists_id: parseInt(listId),
+          contactid: parseInt(id)
+        }
+      });
+
+      if (contactInList) {
+        const removed = await prisma.contact_lists.delete({
+          where: {
+            id: contactInList.id
+          }
+        });
+        removedContacts.push(removed);
+      }
+    }
+
+    if (removedContacts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No contacts found in the list to remove"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Contacts removed successfully",
+      removedContacts
+    });
+  } catch (error) {
+    console.log("ERROR ", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong"
+    });
+  }
 }

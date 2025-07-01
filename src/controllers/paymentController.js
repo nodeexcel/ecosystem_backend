@@ -244,7 +244,8 @@ exports.stripeWebhook = async (req, res) => {
                 subscriptionType: subscriptionType,
                 receiptUrl: receiptUrlNew,
                 transactionDate: transactionDateNew,
-                email: customerEmail
+                email: customerEmail,
+                language:"english"
               }
             });
 
@@ -336,7 +337,7 @@ exports.createUpdateSubscriptionSession = async (req, res) => {
     if (!email || !priceId) {
       return res.status(400).json({ 
         success: false, 
-        message: "Email and Price ID are required" 
+        message: req.t("emailPriceId")
       });
     }
 
@@ -352,7 +353,7 @@ exports.createUpdateSubscriptionSession = async (req, res) => {
     if (!user || !user.subscriptionId) {
       return res.status(404).json({ 
         success: false, 
-        message: "No active subscription found for this user" 
+        message: req.t("noActiveSub")
       });
     }
 
@@ -394,7 +395,7 @@ exports.updateSubscriptionWithProration = async (req, res) => {
     if (!email || !priceId) {
       return res.status(400).json({ 
         success: false, 
-        message: "Email and Price ID are required" 
+        message: req.t("emailPriceId")
       });
     }
 
@@ -412,7 +413,7 @@ exports.updateSubscriptionWithProration = async (req, res) => {
     if (!user || !user.subscriptionId) {
       return res.status(404).json({ 
         success: false, 
-        message: "No active subscription found for this user" 
+        message: req.t("noActiveSub")
       });
     }
 
@@ -423,7 +424,7 @@ exports.updateSubscriptionWithProration = async (req, res) => {
     if (!subscriptionItemId) {
       return res.status(400).json({
         success: false,
-        message: "Subscription item ID not found"
+        message:req.t("subId")
       });
     }
 
@@ -520,7 +521,7 @@ exports.createCreditsession=async (req, res) => {
 
   res.status(500).json({
     success:false,
-    message:"Something went wrong ."
+    message:req.t("somethingWentWrong")
   })
 }
 };

@@ -11,11 +11,15 @@ router.post('/create-list',authMiddleware,contactController.createList);
 
 router.post('/add-contact',authMiddleware,contactController.addContact);
 
-router.delete('/delete-contact/:id',authMiddleware,contactController.deleteContact);
+router.patch('/delete-contact',authMiddleware,contactController.deleteContact);
 
 router.post('/update-contact',authMiddleware,contactController.updateContact);
 
 router.post("/add-contacts-to-list",authMiddleware,contactController.addContactToList);
+
+router.get("/get-contact/:listId",contactController.viewContactList);
+
+router.patch("/remove-contact-from-list",contactController.removeContactFromList);
 
 router.post("/update-list",authMiddleware,contactController.updateList);
 

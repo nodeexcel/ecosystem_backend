@@ -6,6 +6,7 @@ const { OAuth2Client } = require('google-auth-library');
 const fetch = require('node-fetch');
 
 
+
   // Check user existence and profile activation status
   exports.checkUserProfile = async (req, res) => {
     try {
@@ -19,13 +20,15 @@ const fetch = require('node-fetch');
         return res.status(400).json({
           profilePresent: false,
           profileActivated: false,
-          message: 'User not found'
+          // message: 'User not found',
+          message:req.t('userNotFound')
         });
       }
 
       if(user.isDeleted){
         return res.status(400).json({
-          message:"User is deactivated , Please reactivate the account .",
+          // message:"User is deactivated , Please reactivate the account .",
+          message:req.t('userDeactivated'),
           success:false,
         })
       }
@@ -37,7 +40,11 @@ const fetch = require('node-fetch');
         const emailSent = await sendOTPEmail(email, otp);
         
         if (!emailSent) {
-          return res.status(500).json({ message: 'Error sending OTP email' });
+          return res.status(500).json({
+            //  message: 'Error on sending OTP in email'
+            message:req.t('errorSendingOTPEmail')
+
+           });
         }
 
         await prisma.user.update({
@@ -48,7 +55,8 @@ const fetch = require('node-fetch');
         return res.status(200).json({
           profilePresent: true,
           profileActivated: false,
-          message: 'OTP sent to your email',
+          // message: 'OTP sent to your email',
+          message:req.t('otpSent'),
           userId: user.id
         });
       }
@@ -56,12 +64,17 @@ const fetch = require('node-fetch');
       return res.status(200).json({
         profilePresent: true,
         profileActivated: true,
-        message: 'Profile is active',
+        // message: 'Profile is active',
+        message:req.t('profileActive'),
         userId: user.id
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Error checking user profile' });
+      res.status(500).json({
+        //  message: 'Error checking user profile' 
+        message:req.t('errorCheckingUserProfile')
+
+      });
     }
   },
 
@@ -75,16 +88,26 @@ const fetch = require('node-fetch');
       });
 
       if (!user) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        return res.status(400).json({ 
+          // message: 'Invalid credentials'
+          message:req.t('invalidCredentials')
+
+         });
       }
 
       if(user.isDeleted){
-        return res.status(400).json({message:"The account is deactivated, reactivate your account"});
+        return res.status(400).json({
+          // message:"The account is deactivated, reactivate your account"
+          message:req.t('accountDeactivated')
+        });
       }
 
       const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) {
-        return res.status(400).json({ message: 'Invalid credentials' });
+        // message: 'Invalid credentials' 
+        return res.status(400).json({
+           message:req.t('invalidCredentials')
+          });
       }
 
       // Generate JWT token
@@ -122,7 +145,8 @@ const fetch = require('node-fetch');
     //  })
 
       res.json({
-        message: 'Login successful',
+        // message: 'Login successful',
+        message:req.t('loginSuccessful'),
         user: {
           id: user.id,
           firstName: user.firstName,
@@ -135,7 +159,10 @@ const fetch = require('node-fetch');
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Error logging in' });
+      res.status(500).json({
+        //  message: 'Error on login
+        message:req.t('errorOnLogin')
+         })
     }
   },
 
@@ -149,11 +176,11 @@ const fetch = require('node-fetch');
       });
 
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(404).json({ message: req.t('userNotFound') });
       }
 
       if (user.otp !== otp) {
-        return res.status(400).json({ message: 'Invalid OTP' });
+        return res.status(400).json({ message: req.t('invalidOtp') });
       }
 
       await prisma.user.update({
@@ -164,12 +191,12 @@ const fetch = require('node-fetch');
       });
 
       res.json({
-        message: 'Profile activated successfully',
+        message: req.t('profileActiveted'),
         profileActivated: true
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Error verifying OTP' });
+      res.status(500).json({ message: req.t('Something went wrong') });
     }
   },
 
@@ -181,7 +208,7 @@ const fetch = require('node-fetch');
       const { email, newPassword } = req.body;
       if(!email||!newPassword){     
        return res.status(400).json({
-        message:"Resources are missing"
+        message:req.t("resourseMissing")
        })
      }
    
@@ -192,7 +219,7 @@ const fetch = require('node-fetch');
       });
 
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(404).json({ message: req.t("userNotFound") });
       }
 
       // Hash new password
@@ -210,12 +237,12 @@ const fetch = require('node-fetch');
 
 
       res.json({
-        message: 'Password set successfully',
+        message: req.t("passwordSet"),
         user
       });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: 'Error setting password' });
+      res.status(500).json({ message:req.t("errorSettingPassword") });
     }
   },
 
@@ -249,7 +276,7 @@ const fetch = require('node-fetch');
 
       if (!user) {
         return res.status(400).json({
-          message: 'User not found Please signup first',
+          message: req.t("userNotFoundAtSignup"),
           email
         });
       }
@@ -297,7 +324,7 @@ const fetch = require('node-fetch');
       //   maxAge:2592000000 // 30 days
       //  })  
         return res.json({
-          message: 'Login successful',
+          message: req.t("loginSuccessful"),
             userId: user.id,
             firstName: user.firstName,
             lastName: user.lastName,
@@ -321,7 +348,7 @@ const fetch = require('node-fetch');
 
     } catch (error) {
       console.error('Google login error:', error);
-      res.status(500).json({ message: 'Error during Google login' });
+      res.status(500).json({ message:req.t("googleLoginError") });
     }
   }
 
@@ -332,7 +359,7 @@ const fetch = require('node-fetch');
       if(!token){
       return  res.json({
           success:false,
-          message:"refreshToken is required"
+          message:req.t('refereshTokenRequired')
         });
       }
 
@@ -344,7 +371,7 @@ const fetch = require('node-fetch');
       console.log("Error",error.message);
       return res.status(401).json({
       success:false,
-      message:"Token is expired"
+      message:req.t("tokenExpired")
     });
   }
 
@@ -353,7 +380,7 @@ const fetch = require('node-fetch');
      if(!user){
       return res.status(400).json({
         success:false,
-        message:"User not found"
+        message:req.t("userNotFound")
       });
      }
 
@@ -361,7 +388,7 @@ const fetch = require('node-fetch');
 
       return res.status(401).json({
         success:false,
-        message:"Not valid refresh token"
+        message:req.t("invalidRefreshToken")
       })
      }
       
@@ -377,7 +404,8 @@ const fetch = require('node-fetch');
     
        return res.status(200).json({
             success:true,
-            message:"Token generated successfully",
+            message:req.t("tokenGeneratedSuccess"),
+            
             accessToken
 
        });
@@ -386,7 +414,7 @@ const fetch = require('node-fetch');
       console.log("Error",error.message);
      return res.status(500).json({     
           success:false,
-          message:"Internal server error"
+          message:req.t("somethingWentWrong")
         });
      }
   }
@@ -420,14 +448,14 @@ const fetch = require('node-fetch');
 
     return res.status(200).json({
      success:true,
-     message:"Logout successfully "
+     message:req.t("logOut")
     });
 
     }catch(error){
       console.log("error",error.message)
       res.json({
         success:false,
-        message:error.message
+        message:req.t("somethingWentWrong")
       })
     }
   }
@@ -448,14 +476,14 @@ const fetch = require('node-fetch');
 
         return res.status(400).json({
           success:false,
-          message:"No user found"
+          message:req.t("userNotFound")
         });     
       }
 
       if(user.isDeleted){
         return res.status(400).json({
           success:false,
-          message:"User already deleted ."
+          message:req.t("userAlreadyDeleted")
         })
       }
 
@@ -569,7 +597,7 @@ const fetch = require('node-fetch');
 
       return res.json({
         success:true,
-        message:"User deleted "
+        message:req.t("userDelete")
 
       }); 
     
@@ -577,7 +605,7 @@ const fetch = require('node-fetch');
       console.log("ERROR on deleting user : ", error.message)
       return res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message:req.t("somethingWentWrong"),
         error: error.message
       });
     }

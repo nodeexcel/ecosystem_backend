@@ -19,12 +19,14 @@ const {sendInvitationEmail}=require("../services/emailService");
           phoneNumber:true,
           role:true,
           subscriptionType:true,
-          isProfileComplete:true
+          isProfileComplete:true,
+          language:true,
+          countryCode:true,
         }
       });
 
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(404).json({ message: req.t("userNotFound") });
       }
         const totalTeamMember=user.subscriptionType==="pro"?0:(user.subscriptionType==="team"?5:10);
       res.status(200).json({...user,totalTeamMember}); 
@@ -37,11 +39,11 @@ const {sendInvitationEmail}=require("../services/emailService");
   // Update user profile
   exports.updateProfile= async (req, res) => {
     try {
-      const { firstName, lastName, city, country, company, image ,phoneNumber} = req.body;
+      const { firstName, lastName, city, country, company, image ,phoneNumber,countryCode} = req.body;
 
       let isProfileComplete=false;
 
-       if(firstName && lastName && city && country && company && image && phoneNumber){
+       if(firstName && lastName && city && country && company && image && phoneNumber && countryCode){
         isProfileComplete=true;
        }
       const updatedUser = await prisma.user.update({
@@ -54,7 +56,8 @@ const {sendInvitationEmail}=require("../services/emailService");
           company,
           image,
           phoneNumber,
-          isProfileComplete
+          isProfileComplete,
+          countryCode
         },
         select: {
           id: true,
@@ -64,10 +67,11 @@ const {sendInvitationEmail}=require("../services/emailService");
           country: true,
           image: true,
           company: true,
+          countryCode:true,
         }
       });
 
-      res.json({
+     return res.json({
         message: 'Profile updated successfully',
         user: updatedUser
       });
@@ -441,3 +445,60 @@ if(!teamMembers && teamMembers.length === 0){
   }
 };
 
+exports.changeLanguage=async(req,res)=>{
+   try{
+
+    const {language}=req.body;
+
+    const userId=req.userId;
+
+    if(!language){
+      return res.status(400).json({
+        success:false,
+        message:"Provide language to set"
+      })
+    }
+
+    const user=await prisma.user.findUnique({
+      where:{
+        id:userId
+      }
+    });
+
+    if(!user){
+      return res.status(404).json({
+        success:false,
+        message:"User not found"
+      })
+    }
+
+    await prisma.user.update({
+      where:{
+        id:userId
+      },
+      data:{
+          language:language
+      }
+
+    });
+
+   const user1 =await prisma.user.findUnique({where:{
+        id:userId
+    }});
+
+    return res.status(200).json({
+      success:true,
+      message:"Language updated succefully",
+      user1
+    });
+
+
+
+   }catch(error){
+      console.log("Error",error.message);
+      return res.status(500).json({
+        success:true,
+        message:"Something went wrong"
+      })
+   }
+}

@@ -23,13 +23,13 @@ const sentOtp = async (req, res) => {
     if (status) {
       return res.status(200).json({
         success: true,
-        message: "OTP Sent"
+        message: req.t("otpSent")
       });
     }
 
     return res.status(400).json({
       success: false,
-      message: "Something went wrong"
+      message: req.t("somethingWentWrong")
     });
 
   } catch (error) {
@@ -46,7 +46,7 @@ const requestPasswordReset = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      return res.status(400).json({ success: false, message: req.t("emailRequired") });
     }
 
     // Check if user exists
@@ -55,7 +55,7 @@ const requestPasswordReset = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({ success: false, message:req.t("userNotFound") });
     }
 
     // Generate reset token
@@ -78,13 +78,13 @@ const requestPasswordReset = async (req, res) => {
     if (status) {
       return res.status(200).json({
         success: true,
-        message: "Password reset email sent"
+        message: req.t("passwordResetEmail")
       });
     }
 
     return res.status(400).json({
       success: false,
-      message: "Failed to send reset email"
+      message: req.t("failedToSent")
     });
 
   } catch (error) {

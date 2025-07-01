@@ -25,4 +25,6 @@ router.put('/profile',
 
 router.get('/transactions', authMiddleware, userController.getUserTransactions);
 
+router.post('/change-language',authMiddleware,userController.changeLanguage);
+
 module.exports = router; 
