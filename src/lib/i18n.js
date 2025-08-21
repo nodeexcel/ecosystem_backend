@@ -1,5 +1,3 @@
-const { googleLogin } = require("../controllers/authController")
-const { passwordResetToken } = require("./prisma")
 
 exports.english={
             translation:{
@@ -54,7 +52,25 @@ exports.english={
                 otpSent:"OTP Sent",
                 emailRequired:"Email is required",
                 passwordResetEmail:"Password reset email sent",
-                failedToSent:"Failed to send reset email"
+                currPassIncorrect:"Current password is incorrect",
+                failedToSent:"Failed to send reset email",
+                tokenAndPass:"Token and new password are required",
+                invalidAndExpire:"Invalid or expired reset token",
+                passwordResetSuccess:"Password reset successfully",
+                validateEmailPass:"Email, current password and new password are required",
+                passwordUpdate:"Password updated successfully",
+                listNameIdReq:"List name and ID are required",
+                listUpdate:"List updated successfully",
+                listIdReq:"List ID is required",
+                listNotFound:"List not found",
+                listDeleted:"List deleted successfully",
+                listDuplicate:"List Duplicated successfully",
+                dataNotFound:"Data not found for this list",
+                listFetchSuccess:"List fetched successfully",
+                listIdRequired:"listId and contactId array must be provided",
+                foundInList:"No contacts found in the list to remove",
+                contactRemove:"Contacts removed successfully"
+
                 
              
 
@@ -115,7 +131,27 @@ exports.french={
                    otpSent:"OTP envoyé",
                    emailRequired:"L'e-mail est requis",
                    failedToSent:"Échec de l'envoi de l'e-mail de réinitialisation",
-                   passwordResetEmail:"E-mail de réinitialisation du mot de passe envoyé"
+                   passwordResetEmail:"E-mail de réinitialisation du mot de passe envoyé",
+                   tokenAndPass:"Un jeton et un nouveau mot de passe sont requis",
+
+                   invalidAndExpire:"Jeton de réinitialisation non valide ou expiré",
+                   passwordResetSuccess:"mot de passe réinitialisé avec succès",
+                   validateEmailPass:"L'e-mail, le mot de passe actuel et le nouveau mot de passe sont requis",
+                   currPassIncorrect:"Le mot de passe actuel est incorrect",
+                   passwordUpdate:"Mot de passe mis à jour avec succès",
+                   listNameIdReq:"Le nom et l'ID de la liste sont obligatoires",
+                   listUpdate:"Liste mise à jour avec succès",
+                   listIdReq:"L'identifiant de la liste est requis",
+                   listNotFound:"Liste introuvable",
+                   listDeleted:"Liste supprimée avec succès",
+                   listDuplicate:"Liste dupliquée avec succès",
+                   dataNotFound:"Aucune donnée trouvée pour cette liste",
+                   listFetchSuccess:"Liste récupérée avec succès",
+                   listIdRequired:"listId et contactId array doivent être fournis",
+                   foundInList:"Aucun contact trouvé dans la liste à supprimer",
+                   contactRemove:"Contacts supprimés avec succès"
+                   
+
 
             }
         }

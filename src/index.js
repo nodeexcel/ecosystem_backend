@@ -5,6 +5,8 @@ const app = express();
 const i18n = require('i18next');
 const i18nextMiddleware = require('i18next-http-middleware');
 const {english,french}=require("./lib/i18n");
+const cron=require("node-cron");
+const prisma = require('./lib/prisma');
 
 // Middleware
 app.use(cors());
@@ -52,13 +54,90 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/password', passwordRoutes);
 app.use('/api/contacts', contactRoutes);
 
+
+// async function  checkSubcription(){
+//    try{
+
+      
+
+//    }catch(error){
+//     console.log("Error ",error);
+//    }
+
+// }
+
+// Runs every second
+// cron.schedule('* * * * * *', () => {
+//   co+
+cron.schedule('0 0 * * *', async () => {
+  console.log('Running subscription renewal/expiry check at', new Date().toLocaleString());
+
+  try {
+    // 1. Handle credit revocation for monthly renewal
+    const teamsToRevoke = await prisma.team.findMany({
+      where: {
+        nextMonthRenewDate: { lte: new Date() },
+        numberOfRenewMonths: { gt: 0 }
+      }
+    });
+
+    for (const team of teamsToRevoke) {
+      await prisma.team.update({
+        where: { id: team.id },
+        data: {
+          credits: 0, // Revoke credits
+          numberOfRenewMonths: team.numberOfRenewMonths - 1,
+          nextMonthRenewDate:
+            team.numberOfRenewMonths > 1
+              ? new Date(new Date().setMonth(new Date().getMonth() + 1))
+              : null // no next renewal if months are done
+        }
+      });
+
+      console.log(`Credits revoked for user ${team.user.email}`);
+    }
+
+    // 2. Expire subscriptions when subscriptionEndDate passed or missing
+    const expiredUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { subscriptionEndDate: { lt: new Date() } },
+          { subscriptionEndDate: null }
+        ],
+        subscriptionStatus: 'active'
+      }
+    });
+
+    for (const user of expiredUsers) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { subscriptionStatus: 'expired' }
+      });
+
+      await prisma.team.updateMany({
+        where: { userId: user.id },
+        data: { credits: 0 }
+      });
+
+      console.log(`Subscription expired for user ${user.email}`);
+    }
+
+    console.log('Scheduler run complete ✅');
+  } catch (error) {
+    console.error('Error in subscription scheduler:', error);
+  }
+});
+
+
+
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 9876;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 }); 

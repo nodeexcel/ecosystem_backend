@@ -357,7 +357,7 @@ const fetch = require('node-fetch');
      const {token}=req.body;
 
       if(!token){
-      return  res.json({
+      return  res.status(401).json({
           success:false,
           message:req.t('refereshTokenRequired')
         });

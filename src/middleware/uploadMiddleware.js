@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { uploadImage } = require('../services/cloudinaryService');
+const { uploadImage } = require('../services/awsS3Service'); // Adjust the path as necessary
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '../../uploads');
@@ -60,7 +60,8 @@ exports.handleImageUpload = async (req, res, next) => {
   } catch (error) {
     // Clean up: Delete the temporary file if there was an error
     if (req.file && req.file.path) {
-      fs.unlink(req.file.path, (err) => {
+      fs.unlink(req.file.path, (
+        err) => {
         if (err) console.error('Error deleting temporary file:', err);
       });
     }

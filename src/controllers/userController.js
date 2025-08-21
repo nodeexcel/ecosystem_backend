@@ -111,9 +111,9 @@ const {sendInvitationEmail}=require("../services/emailService");
   }
 
 
-  if (admin.subscriptionType === 'business' && admin.numberOfTeamMembers>= 10) {
-    return res.status(403).json({ message: 'Business plan allows max 10 members.' });
-  }
+  // if (admin.subscriptionType === 'business' && admin.numberOfTeamMembers>= 10) {
+  //   return res.status(403).json({ message: 'Business plan allows max 10 members.' });
+  // }
 
   const team=await prisma.team.findFirst({where:{userId:adminId}});
   const token = uuid();
@@ -260,9 +260,9 @@ exports.acceptInvitation = async (req,res) => {
     }
   
   
-    if (admin.subscriptionType === 'business' && admin.numberOfTeamMembers>= 10) {
-      return res.status(403).json({ message: 'Business plan allows max 10 members.' });
-    }
+    // if (admin.subscriptionType === 'business' && admin.numberOfTeamMembers>= 10) {
+    //   return res.status(403).json({ message: 'Business plan allows max 10 members.' });
+    // }
 
       
     const user = await prisma.user.create({ 
@@ -272,6 +272,8 @@ exports.acceptInvitation = async (req,res) => {
         activeProfile:false,
         isProfileComplete:false,
         subscriptionType:admin.subscriptionType,
+        subscriptionDurationType:admin.subscriptionDurationType,
+        subscriptionEndDate:admin.subscriptionEndDate
       },
     });
 
@@ -482,9 +484,12 @@ exports.changeLanguage=async(req,res)=>{
 
     });
 
+    // console.log(language);
+
    const user1 =await prisma.user.findUnique({where:{
         id:userId
     }});
+    // console.log(user1);
 
     return res.status(200).json({
       success:true,

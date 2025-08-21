@@ -101,7 +101,7 @@ const resetPassword = async (req, res) => {
     const { token, newPassword } = req.body;
 
     if (!token || !newPassword) {
-      return res.status(400).json({ success: false, message: "Token and new password are required" });
+      return res.status(400).json({ success: false, message: req.t("tokenAndPass") });
     }
 
     // Find valid reset token
@@ -115,7 +115,7 @@ const resetPassword = async (req, res) => {
     });
 
     if (!resetToken) {
-      return res.status(400).json({ success: false, message: "Invalid or expired reset token" });
+      return res.status(400).json({ success: false, message: req.t("invalidAndExpire") });
     }
 
     // Hash new password
@@ -135,7 +135,7 @@ const resetPassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Password reset successful"
+      message: req.t("passwordResetSuccess")
     });
 
   } catch (error) {
@@ -154,7 +154,7 @@ const setNewPassword = async (req, res) => {
     if (!email || !currentPassword || !newPassword) {
       return res.status(400).json({ 
         success: false, 
-        message: "Email, current password and new password are required" 
+        message:req.t("validateEmailPass")
       });
     }
 
@@ -166,7 +166,7 @@ const setNewPassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({ 
         success: false, 
-        message: "User not found" 
+        message: req.t("userNotFound")
       });
     }
 
@@ -175,7 +175,7 @@ const setNewPassword = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(400).json({ 
         success: false, 
-        message: "Current password is incorrect" 
+        message: req.t("currPassIncorrect")
       });
     }
 
@@ -191,7 +191,7 @@ const setNewPassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Password updated successfully"
+      message:req.t("passwordUpdate")
     });
 
   } catch (error) {

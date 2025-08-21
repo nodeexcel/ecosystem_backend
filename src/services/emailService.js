@@ -25,15 +25,12 @@ const sendOTPEmail = async (email, otp) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ecosysteme.ai Login Verification</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8f8f8; font-family: sans-serif;">
+<body style="margin: 0; padding: 0; background-color: #f0f0ff; font-family: sans-serif;">
   <div style="width: 100%; margin: 0 auto; box-sizing: border-box;">
     <!-- Header -->
-    <div style="width: 95%; padding: 30px 20px; background-color: #f0f0ff; text-align: center; border-radius: 0;">
+    <div style="width: 95%; padding: 30px 20px; background-color: rgb(235, 227, 227); text-align: center; border-radius: 0;">
       <div style="display: inline-block; text-align: center;">
-        <img style="width: 50px; height: 50px; vertical-align: middle;" alt="Logo" src="https://res.cloudinary.com/dyqxb9s7l/image/upload/v1747207644/logo_lxvyxp.png"/>
-        <span style="font-weight: 600; color: #1e1e1e; font-size: 1.75rem; vertical-align: middle; margin-left: 10px;">
-          Ecosysteme.ai
-        </span>
+        <img style="width:250px; vertical-align: middle;" alt="Logo" src="https://res.cloudinary.com/dyqxb9s7l/image/upload/v1752237623/image_10_ciof8p.png"/>
       </div>
     </div>
 
@@ -49,7 +46,7 @@ const sendOTPEmail = async (email, otp) => {
       <p style="font-size: 16px; margin: 0 0 30px; color: #000; font-weight: normal;">Use this below 4 digit code to login</p>
       
       <!-- OTP Code -->
-      <div style="flex: 1; font-weight: 600; color: #675FFF; font-size: 14px; background-color:white;padding:10px;border-radius:10px;">
+      <div style="flex: 1; font-weight: 600; color: #675FFF; font-size: 14px; background-color:rgb(252,252,252);padding:10px;border-radius:10px;">
         ${otp}
       </div>
       
@@ -160,10 +157,8 @@ const sendResetPasswordEmail = async (email, token) => {
     <!-- Header -->
     <div style="width: 95%; padding: 30px 20px; background-color: #f0f0ff; text-align: center; border-radius: 0;">
       <div style="display: inline-block; text-align: center;">
-        <img style="width: 50px; height: 50px; vertical-align: middle;" alt="Logo" src="https://res.cloudinary.com/dyqxb9s7l/image/upload/v1747207644/logo_lxvyxp.png"/>
-        <span style="font-weight: 600; color: #1e1e1e; font-size: 1.75rem; vertical-align: middle; margin-left: 10px;">
-          Ecosysteme.ai
-        </span>
+        <img style="width:250px; vertical-align: middle;" alt="Logo" src="https://res.cloudinary.com/dyqxb9s7l/image/upload/v1752237623/image_10_ciof8p.png"/>
+    
       </div>
     </div>
 

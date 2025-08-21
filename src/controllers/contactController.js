@@ -282,6 +282,7 @@ exports.updateContact=async(req,res)=>{
         data: {
           listName,
           channel,
+          description,
           team_id: team.id,
           created_at: new Date()
         }
@@ -472,7 +473,7 @@ exports.updateContact=async(req,res)=>{
         if(!listName || !listId){
           return res.status(400).json({
             success:false,
-            message:"List name and ID are required"
+            message:req.t("listNameIdReq")
           })
         }
 
@@ -486,13 +487,13 @@ exports.updateContact=async(req,res)=>{
           data: {
             listName,
             channel,
-            // description: description || '',
+            description: description || "",
           }
         });
 
         return res.status(200).json({
           success: true,
-          message: "List updated successfully",
+          message: req.t("listUpdate"),
           list
         });
 
@@ -500,7 +501,7 @@ exports.updateContact=async(req,res)=>{
         console.log("Error on editing contact:", error.message);
         return res.status(500).json({
           success: false,
-          message: "Something went wrong."
+          message: req.t("somethingWentWrong")
         });
       }
 } 
@@ -517,7 +518,7 @@ exports.getLists = async (req, res) => {
     if (!team) {
       return res.status(404).json({
         success: false,
-        message: "Team not found",
+        message: req.t("teamNotFound"),
       });
     }
 
@@ -554,6 +555,7 @@ exports.getLists = async (req, res) => {
         return {
           id: list.id,
           listName: list.listName,
+          description: list.description,
           activeContacts: count,
           channel: list.channel,
           createdDate: list.created_at,
@@ -562,14 +564,14 @@ exports.getLists = async (req, res) => {
     );
 
     return res.status(200).json({
-      success: true,
       lists: data,
+      success: true,
     });
   } catch (error) {
     console.error("ERROR:", error.message);
     res.status(500).json({
       success: false,
-      message: "Something went wrong",
+      message: req.t("somethingWentWrong"),
     });
   }
 };
@@ -584,7 +586,7 @@ exports.deleteList=async(req,res)=>{
     if(!listId){
       return res.status(400).json({
         success:false,
-        message:"List ID is required"
+        message:req.t("listIdReq")
       })
     }
 
@@ -599,7 +601,7 @@ exports.deleteList=async(req,res)=>{
     if (!listExists) {
       return res.status(404).json({
         success: false,
-        message: "List not found"
+        message: req.t("listNotFound")
       });
     }
 
@@ -612,7 +614,7 @@ exports.deleteList=async(req,res)=>{
 
     return res.status(200).json({
       success: true,
-      message: "List deleted successfully",
+      message: req.t("listDeleted"),
       list
     });
 
@@ -620,7 +622,7 @@ exports.deleteList=async(req,res)=>{
     console.log("Error on deleting list:", error.message);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong."
+      message: req.t("somethingWentWrong")
     });
    }
 }
@@ -645,7 +647,7 @@ exports.duplicateList=async(req,res)=>{
     if(!list){
       return res.status(404).json({
         success:false,
-        message:"List not found"
+        message:req.t("listNotFound")
       })
     }
     const newList=await prisma.lists.create({
@@ -673,7 +675,7 @@ exports.duplicateList=async(req,res)=>{
     }));
     return res.status(200).json({
       success: true,
-      message: "List duplicated successfully",
+      message: req.t("listDuplicate"),
       newList
     });
 
@@ -681,7 +683,7 @@ exports.duplicateList=async(req,res)=>{
     console.log("Error on duplicating list:", error.message);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong."
+      message: req.t("somethingWentWrong")
     });
    }
 
@@ -695,7 +697,7 @@ exports.viewContactList=async(req,res)=>{
 
     if(!listId){
       return res.status(404).json({
-        message:"List Not found"
+        message:req.t("listNotFound")
       })
     }
 
@@ -719,14 +721,14 @@ exports.viewContactList=async(req,res)=>{
       return res.status(200).json({
         success:true,
           contacts:[],
-          message:"data not found for this list"
+          message:req.t("dataNotFound")
       });
     }
 
     return res.status(200).json({
       success:true,
       contacts,
-      message:"List fetch successfully"
+      message:req.t("listFetchSuccess")
     })
 
 
@@ -749,7 +751,7 @@ exports.removeContactFromList = async (req, res) => {
     if (!listId || !contactId || !Array.isArray(contactId) || contactId.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "listId and contactId array must be provided"
+        message: req.t("listIdRequired")
       });
     }
 
@@ -775,20 +777,20 @@ exports.removeContactFromList = async (req, res) => {
     if (removedContacts.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No contacts found in the list to remove"
+        message: req.t("foundInList")
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Contacts removed successfully",
+      message: req.t("contactRemove"),
       removedContacts
     });
   } catch (error) {
     console.log("ERROR ", error.message);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong"
+      message: req.t("somethingWentWrong")
     });
   }
 }
