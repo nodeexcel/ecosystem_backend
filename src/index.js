@@ -13,7 +13,9 @@ app.use(cors());
 
 // Custom middleware to handle webhook requests
 app.use((req, res, next) => {
+   console.log(req.originalUrl);
   if (req.originalUrl === '/api/payments/webhook') {
+   
     next(); // Skip body parsing for webhook
   } else {
     express.json()(req, res, next); // Parse JSON normally for other routes
@@ -38,10 +40,7 @@ i18n.init(i18nConfig);
 
 app.use(i18nextMiddleware.handle(i18n));
 
-// Routes
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the KIN Backend API' });
-});
+
 // Import and use routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -55,20 +54,6 @@ app.use('/api/password', passwordRoutes);
 app.use('/api/contacts', contactRoutes);
 
 
-// async function  checkSubcription(){
-//    try{
-
-      
-
-//    }catch(error){
-//     console.log("Error ",error);
-//    }
-
-// }
-
-// Runs every second
-// cron.schedule('* * * * * *', () => {
-//   co+
 cron.schedule('0 0 * * *', async () => {
   console.log('Running subscription renewal/expiry check at', new Date().toLocaleString());
 
