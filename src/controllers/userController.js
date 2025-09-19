@@ -22,13 +22,15 @@ const {sendInvitationEmail}=require("../services/emailService");
           isProfileComplete:true,
           language:true,
           countryCode:true,
+          subscriptionDurationType:true,
+          subscriptionEndDate:true,
         }
       });
-
+      
       if (!user) {
         return res.status(404).json({ message: req.t("userNotFound") });
       }
-        const totalTeamMember=user.subscriptionType==="pro"?0:(user.subscriptionType==="team"?5:10);
+      const totalTeamMember=user.subscriptionType==="pro"?1:5;
       res.status(200).json({...user,totalTeamMember}); 
     } catch (error) {
       console.error(error);
@@ -122,11 +124,6 @@ const {sendInvitationEmail}=require("../services/emailService");
   if(team){
 
   if(admin.subscriptionType==="team"&&team.numberOfTeamMembers===5){
-    return res.status(400).json({
-      success:false,
-      message:"Team is full"
-    })
-  }else if(admin.subscriptionType==="business"&&team.numberOfTeamMembers===10){
     return res.status(400).json({
       success:false,
       message:"Team is full"

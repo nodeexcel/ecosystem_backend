@@ -9,11 +9,11 @@ const cron=require("node-cron");
 const prisma = require('./lib/prisma');
 
 // Middleware
-app.use(cors());
+app.use(cors("*"));
 
 // Custom middleware to handle webhook requests
 app.use((req, res, next) => {
-   console.log(req.originalUrl);
+  //  console.log(req.originalUrl);
   if (req.originalUrl === '/api/payments/webhook') {
    
     next(); // Skip body parsing for webhook
