@@ -41,6 +41,11 @@ i18n.init(i18nConfig);
 app.use(i18nextMiddleware.handle(i18n));
 
 
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to the KIN Backend API' });
+});
+
+
 // Import and use routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
