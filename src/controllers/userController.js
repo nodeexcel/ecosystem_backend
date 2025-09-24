@@ -422,6 +422,7 @@ if(!teamMembers && teamMembers.length === 0){
           company:true,
           country:true,
           city:true,
+          id:true
         }
       })
       return memberData;
@@ -502,5 +503,112 @@ exports.changeLanguage=async(req,res)=>{
         success:true,
         message:"Something went wrong"
       })
+   }
+}
+
+exports.deleteMemberAccount=async(req,res)=>{
+
+   try{
+     const userId=req.userId;
+     const {memberId}=req.body;
+
+     if(!memberId){
+      return res.status(400).json({
+        success:false,
+        message:"Member id is required"
+      })
+     }
+
+     if(userId===memberId){
+      return res.status(400).json({
+        success:false,
+        message:"Admin user cannot delete their own account"
+      })
+     }
+
+
+     const user=await prisma.user.findUnique({
+      where:{
+        id:userId
+      }
+     })
+     
+     if(!user){
+      return res.status(404).json({
+        success:false,
+        message:"User not found"
+      })
+     }
+      if(user.role.toLowerCase()!=="admin")
+        return res.status(403).json({
+          success:false,
+          message:"Only admin can delete user"
+        });
+
+      const member=await prisma.teammembers.findFirst({
+        where:{
+          userId:memberId
+        }
+      })
+
+      if(!member){
+        return res.status(404).json({
+          success:false,
+          message:"User not found in team"
+        })
+      }
+
+      if(member.isAdmin){
+        return res.status(400).json({
+          success:false,
+          message:"Admin user cannot be deleted"
+        })
+      }
+
+      const team=await prisma.team.findUnique({
+        where:{
+          id:member.teamId
+        }
+      })
+
+      if(!team){
+        return res.status(404).json({
+          success:false,
+          message:"Team not found"
+        })
+      }
+       
+      await prisma.teammembers.deleteMany({
+        where:{
+          userId:memberId
+        }
+      })
+
+      await prisma.user.delete({
+        where:{
+          id:memberId
+        }
+      })
+
+      await prisma.team.update({
+        where:{
+          id:team.id
+        },
+        data:{
+          numberOfTeamMembers:team.numberOfTeamMembers-1
+        }
+      })
+
+      return res.status(200).json({
+        success:true,
+        message:"User deleted successfully"
+      })
+
+   }catch(error){
+    console.log("Error",error.message);
+    return res.status(500).json({
+      success:false,
+      message:"Something went wrong"
+    })
    }
 }

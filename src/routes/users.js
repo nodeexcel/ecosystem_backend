@@ -27,4 +27,6 @@ router.get('/transactions', authMiddleware, userController.getUserTransactions);
 
 router.post('/change-language',authMiddleware,userController.changeLanguage);
 
+router.patch('/delete-member',authMiddleware,userController.deleteMemberAccount);
+
 module.exports = router; 
