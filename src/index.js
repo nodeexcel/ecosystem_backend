@@ -7,6 +7,7 @@ const i18nextMiddleware = require('i18next-http-middleware');
 const {english,french}=require("./lib/i18n");
 const cron=require("node-cron");
 const prisma = require('./lib/prisma');
+const {sendSubscriptionPurchaseEmail}=require("./services/emailService")
 
 // Middleware
 app.use(cors("*"));
@@ -43,6 +44,7 @@ app.use(i18nextMiddleware.handle(i18n));
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the KIN Backend API' });
+
 });
 
 

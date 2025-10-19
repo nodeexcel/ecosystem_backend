@@ -4,6 +4,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { v4: uuid } = require('uuid');
 const { UserRefreshClient } = require('google-auth-library');
 const { json } = require('express');
+const {sendSubscriptionPurchaseEmail}=require("../services/emailService")
 
 exports.checkoutSession = async (req, res) => {
   try {
@@ -532,6 +533,8 @@ exports.stripeWebhook = async (req, res) => {
             });
           }
         }
+
+        sendSubscriptionPurchaseEmail(newUser.email,newUser.firstName);
 
         console.log('User data and transaction history processed successfully');
 

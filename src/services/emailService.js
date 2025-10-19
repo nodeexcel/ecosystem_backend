@@ -11,6 +11,126 @@ const sesClient = new SESClient({
   }
 });
 
+
+const sendSubscriptionPurchaseEmail = async (email, username) => {
+  try {
+    const firstName = username || 'Cher utilisateur';
+    const activateUrl = 'https://www.app.ecosysteme.ai/';
+
+    const params = {
+      Source: process.env.EMAIL_USER,
+      Destination: {
+        ToAddresses: [email],
+      },
+      Message: {
+        Subject: {
+          Data: '👋 Active ton compte sur Ecosysteme.ai',
+          Charset: 'UTF-8',
+        },
+        Body: {
+          Html: {
+            Data: `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Activation de compte - Ecosysteme.ai</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f8f8f8;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="max-width:680px;margin:0 auto;padding:24px;box-sizing:border-box;">
+    <!-- Header -->
+    <div style="text-align:center;padding:24px 12px;background-color:#f0f0ff;border-radius:8px;">
+      <img alt="Ecosysteme.ai" src="https://ecosystem-ai.s3.eu-north-1.amazonaws.com/assests/logo_lxvyxp.png" style="width:160px;height:auto;display:block;margin:0 auto;" />
+    </div>
+
+    <!-- Main -->
+    <div style="background:#ffffff;padding:32px;border-radius:8px;margin-top:18px;color:#0b0b0b;">
+      <h1 style="font-size:22px;margin:0 0 12px;font-weight:600;">Salut ${firstName},</h1>
+
+      <p style="font-size:16px;line-height:1.5;margin:0 0 16px;">
+        Bienvenue à bord ! 🚀
+      </p>
+
+      <p style="font-size:16px;line-height:1.5;margin:0 0 20px;">
+        Pour activer ton compte, tu vas d’abord recevoir un code de vérification par e-mail.<br/>
+        Entre ce code lorsque c’est demandé, puis crée ton mot de passe pour finaliser ton accès.
+      </p>
+
+      <!-- Button -->
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${activateUrl}" style="display:inline-block;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;background-color:#675FFF;color:#ffffff;">
+          👉 Activer mon compte
+        </a>
+      </div>
+
+      <!-- Fallback Link -->
+      <p style="font-size:14px;line-height:1.4;margin:8px 0 18px;color:#333;">
+        Si le bouton ne fonctionne pas, copie-colle ce lien dans ton navigateur :
+      </p>
+
+      <div style="background:#f4f6ff;padding:12px;border-radius:8px;word-break:break-all;margin-bottom:18px;font-weight:600;color:#675FFF;">
+        <a href="${activateUrl}" style="color:#675FFF;text-decoration:none;">${activateUrl}</a>
+      </div>
+
+      <p style="font-size:16px;line-height:1.5;margin-top:28px;">
+        À tout de suite,<br/>
+        <strong>Sami</strong>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px;background-color:#6366f1;color:#fff;border-radius:8px;overflow:hidden;">
+      <tr>
+        <td style="padding:18px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img src="https://ecosystem-ai.s3.eu-north-1.amazonaws.com/assests/logo_lxvyxp.png" alt="Logo" style="width:44px;height:44px;display:block;">
+            <div style="font-weight:600;font-size:18px;">Ecosysteme.ai</div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <a href="#" style="margin-right:10px;display:inline-block;background:rgba(255,255,255,0.15);padding:8px;border-radius:50%;text-decoration:none;">
+              <img src="https://ecosystem-ai.s3.eu-north-1.amazonaws.com/assests/whatsapp_cnfbrz.png" alt="WhatsApp" style="width:14px;height:14px;">
+            </a>
+            <a href="#" style="margin-right:10px;display:inline-block;background:rgba(255,255,255,0.15);padding:8px;border-radius:50%;text-decoration:none;">
+              <img src="https://ecosystem-ai.s3.eu-north-1.amazonaws.com/assests/facebook_jmmlqy.png" alt="Facebook" style="width:14px;height:14px;">
+            </a>
+            <a href="#" style="display:inline-block;background:rgba(255,255,255,0.15);padding:8px;border-radius:50%;text-decoration:none;">
+              <img src="https://ecosystem-ai.s3.eu-north-1.amazonaws.com/assests/instagram_ebofvs.png" alt="Instagram" style="width:14px;height:14px;">
+            </a>
+          </div>
+
+          <hr style="border:none;height:1px;background-color:rgba(255,255,255,0.12);margin:18px 0;">
+
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;">
+            <div>Copyright © 2025 All Rights Reserved</div>
+            <div>
+              <a href="${process.env.FRONTEND_URL}/terms-conditions" style="color:#ffffff;text-decoration:none;margin-right:8px;">Terms & Conditions</a>
+              <span style="color:rgba(255,255,255,0.6);margin:0 8px;">|</span>
+              <a href="${process.env.FRONTEND_URL}/privacy-policy" style="color:#ffffff;text-decoration:none;">Privacy Policy</a>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>`,
+            Charset: 'UTF-8',
+          },
+        },
+      },
+    };
+
+    const command = new SendEmailCommand(params);
+    await sesClient.send(command);
+    return true;
+  } catch (error) {
+    console.error('Error sending subscription activation email:', error);
+    return false;
+  }
+};
+
+
 const sendOTPEmail = async (email, otp) => {
   try {
     const params = {
@@ -373,5 +493,6 @@ const sendInvitationEmail = async (email, token, adminName) => {
 module.exports = {
   sendOTPEmail,
   sendResetPasswordEmail,
-  sendInvitationEmail
+  sendInvitationEmail,
+  sendSubscriptionPurchaseEmail
 };
