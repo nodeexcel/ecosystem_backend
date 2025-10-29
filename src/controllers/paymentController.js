@@ -531,13 +531,13 @@ exports.stripeWebhook = async (req, res) => {
                 email: customerEmail
               }
             });
+
+            sendSubscriptionPurchaseEmail(newUser.email,newUser.firstName);  
+
+            // console.log('User data and transaction history processed successfully');
+
           }
         }
-
-        sendSubscriptionPurchaseEmail(newUser.email,newUser.firstName);
-
-        console.log('User data and transaction history processed successfully');
-
       } catch (error) {
         // Handle errors during user or transaction processing
         console.error('Error processing user data or saving transaction history:', error);

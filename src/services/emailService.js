@@ -160,13 +160,13 @@ const sendOTPEmail = async (email, otp) => {
     </div>
     <div style="padding: 40px 20px;">
       <img src="https://ecosystem-ai.s3.eu-north-1.amazonaws.com/assests/image_czg2wu.png" alt="Password Field" style="width: 100px; height: auto;">
-      <h1 style="font-size: 24px; margin: 20px 0 10px;">You requested to login Ecosysteme.ai.</h1>
-      <p style="font-size: 16px;">Use this below 4 digit code to login</p>
+      <h1 style="font-size: 24px; margin: 20px 0 10px;">Tu as demandé à te connecter à Ecosysteme.ai.</h1>
+      <p style="font-size: 16px;">Utilise le code à 4 chiffres ci-dessous pour te connecter :</p>
       <div style="font-weight: 600; color: #675FFF; font-size: 14px; background-color:rgb(252,252,252);padding:10px;border-radius:10px;">
         ${otp}
       </div>
-      <p style="color: #ef4444; font-size: 14px; margin: 30px 0;">*This otp will expire in 1 hour.</p>
-      <p style="font-size: 14px;">If you didn't request this, please ignore this email.</p>
+      <p style="color: #ef4444; font-size: 14px; margin: 30px 0;">*Ce code expirera dans une heure.</p>
+      <p style="font-size: 14px;">Si tu n’as pas fait cette demande, ignore simplement cet e-mail.</p>
     </div>
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #6366f1; color: white;">
       <tr>
