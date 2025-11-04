@@ -235,10 +235,26 @@ const fetch = require('node-fetch');
         }
       });
 
+       const accessToken = jwt.sign(
+        { userId: user.id ,userEmail:user.email},
+        process.env.JWT_SECRET,
+        { expiresIn: '1d' }
+      );
+
+      const refreshToken=jwt.sign(
+        {userId:user.id,userEamil:user.email},
+        process.env.JWT_SECRET,
+        {
+          expiresIn:'30d'
+        }
+      );
+
 
       res.json({
         message: req.t("passwordSet"),
-        user
+        user,
+        accessToken,
+        refreshToken
       });
     } catch (error) {
       console.error(error);

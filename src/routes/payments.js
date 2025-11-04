@@ -11,6 +11,7 @@ router.post('/subscription-session', paymentController.createSubscriptionSession
 router.post('/update-subscription-session',authMiddleware, paymentController.createUpdateSubscriptionSession);
 router.post('/update-subscription', paymentController.updateSubscriptionWithProration);
 router.post('/create-credit-session',authMiddleware, paymentController.createCreditsession);
+router.post('/create-phone-session-credit',authMiddleware, paymentController.createPhoneSessionCredit);
 
 router.post('/webhook', 
   express.raw({type: 'application/json'}), 

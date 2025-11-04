@@ -373,6 +373,67 @@ exports.stripeWebhook = async (req, res) => {
             });
           }
 
+        } else if (session.metadata?.type === "phone_credits") {
+          try {
+            const userId = parseInt(session.metadata.userId);
+            const credits = parseInt(session.metadata.credits);
+            const inputAmount = parseFloat(session.metadata.amount);
+
+            const amountPaid = (session.amount_total ?? 0) / 100;
+            const currency = session.currency;
+            const paymentMethod = session.payment_method_types?.[0] || null;
+            const transactionDate = new Date((session.created || Date.now() / 1000) * 1000);
+
+            const userCredits = await prisma.phone_credits.findFirst({
+              where:{
+                user_id:userId
+              }
+            })
+
+             if(!userCredits){
+              await prisma.phone_credits.create({
+                data: {
+                  user_id: userId,
+                  balance: amountPaid,
+                  credits: credits,
+                }
+              })
+
+            }else{
+              await prisma.phone_credits.updateMany({
+                where:{
+                  user_id:userId
+                },
+                data:{
+                  balance:(userCredits?.balance||0)+amountPaid,
+                  credits:(userCredits?.credits||0)+credits  
+                }
+              })
+            }
+
+
+            await prisma.transactionHistory.create({
+              data: {
+                userId: userId,
+                paymentId: session.payment_intent || session.id,
+                amountPaid: amountPaid,
+                currency: currency,
+                status: session.payment_status,
+                paymentMethod: paymentMethod,
+                subscriptionType: 'phone_credits',
+                receiptUrl: null,
+                transactionDate: transactionDate,
+                email: session.customer_details?.email || session.customer_email,
+              }
+            });
+          } catch (error) {
+            console.error('Error processing phone_credits purchase:', error);
+            return res.status(500).json({
+              error: 'Error processing phone_credits purchase',
+              details: error.message
+            });
+          }
+
           // Handle new subscription (user signup)
         } else {
           // Check if user already exists
@@ -865,6 +926,43 @@ exports.createCreditsession = async (req, res) => {
       success: false,
       message: req.t("somethingWentWrong")
     })
+  }
+};
+
+
+exports.createPhoneSessionCredit = async (req, res) => {
+  try {
+    const { amount, currency = 'eur' } = req.body;
+    const userId = req.userId;
+
+    if (!userId || !amount || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: 'userId and positive amount are required' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const credits = Math.floor(Number(amount) * 5);
+
+    const session = await stripeService.createPhoneSessionCreditSession(
+      user.email,
+      userId,
+      Number(amount),
+      credits,
+      currency
+    );
+
+    return res.status(200).json({
+      success: true,
+      sessionId: session.id,
+      sessionUrl: session.url,
+      credits,
+    });
+  } catch (error) {
+    console.error('Error creating phone session credit session:', error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

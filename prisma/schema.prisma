@@ -42,18 +42,22 @@ model User {
   content                            content[]
   content_creation_chat_history      content_creation_chat_history[]
   coo_chat_history                   coo_chat_history[]
+  customer_support_chat_history      customer_support_chat_history[]
   email_campaign                     email_campaign[]
   // google_calendar_connection_details google_calendar_connection_details[]
   hr_chat_history                    hr_chat_history[]
   instagram_connection_details       instagram_connection_details[]
   invite_tokens                      teamInvite[]
+  knowledge_attachment               knowledge_attachment[]
   knowledge_base                     knowledge_base[]
   linkedin_connection_details        linkedin_connection_details[]
   linkedin_post                      linkedin_post[]
   phone_agent                        phone_agent[]
   phone_campaign                     phone_campaign[]
+  phone_credits                      phone_credits[]
   scheduled_content                  scheduled_content[]
   seo_chat_history                   seo_chat_history[]
+  smart_customer_support_chatbot     smart_customer_support_chatbot[]
   team                               team[]
   teammembers                        teammembers[]
   transaction_history                transactionHistory[]
@@ -222,12 +226,13 @@ model checkpoints {
 }
 
 model knowledge_base {
-  id        Int     @id @default(autoincrement())
-  data      String? @db.VarChar
-  data_type String? @db.VarChar
-  path      String? @db.VarChar
-  user_id   Int?
-  users     User?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id         Int       @id @default(autoincrement())
+  data       String?   @db.VarChar
+  data_type  String?   @db.VarChar
+  path       String?   @db.VarChar
+  user_id    Int?
+  created_at DateTime? @db.Timestamp(6)
+  users      User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([id], map: "ix_knowledge_base_id")
 }
@@ -353,15 +358,16 @@ model account_chat_history {
 }
 
 model agent_phone_numbers {
-  id           Int       @id @default(autoincrement())
-  name         String    @db.VarChar
-  country      String    @db.VarChar
-  phone_number String    @unique @db.VarChar
-  status       Boolean?
-  number_type  String    @db.VarChar
-  created_at   DateTime? @db.Timestamp(6)
-  user_id      Int?
-  users        User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar
+  country       String    @db.VarChar
+  phone_number  String    @unique @db.VarChar
+  status        Boolean?
+  number_type   String    @db.VarChar
+  created_at    DateTime? @db.Timestamp(6)
+  user_id       Int?
+  twilio_number String    @unique @db.VarChar
+  users         User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([id], map: "ix_agent_phone_numbers_id")
 }
@@ -429,7 +435,6 @@ model phone_campaign {
   voice           String       @db.VarChar
   choose_calendar String?      @db.VarChar
   max_call_time   Int?
-  target_lists    String[]     @db.VarChar
   country         String       @db.VarChar
   phone_number    String       @db.VarChar
   status          String?      @db.VarChar
@@ -439,6 +444,8 @@ model phone_campaign {
   created_at      DateTime?    @db.Timestamp(6)
   agent           Int?
   user_id         Int?
+  target_lists    Int
+  campaign_type   String?      @db.VarChar
   phone_agent     phone_agent? @relation(fields: [agent], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users           User?        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -477,6 +484,7 @@ model hr_chat_history {
   user_id      Int?
   created_at   DateTime? @db.Timestamptz(6)
   updated_at   DateTime? @db.Timestamptz(6)
+  agent_type   String?   @db.VarChar
   users        User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([id], map: "ix_hr_chat_history_id")
@@ -581,4 +589,111 @@ model youtube_script {
   users               User?    @relation(fields: [user], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([id], map: "ix_youtube_script_id")
+}
+
+model call_record {
+  id                  Int     @id @default(autoincrement())
+  from_contact_number String  @db.VarChar
+  contact_number      String  @db.VarChar
+  result              String? @db.VarChar
+  created_at          String? @db.VarChar
+  call_sid            String? @db.VarChar
+  call_type           String? @db.VarChar
+  user_id             Int?
+  campaign_name       String? @db.VarChar
+  agent_name          String? @db.VarChar
+  language            String? @db.VarChar
+  voice               String? @db.VarChar
+
+  @@index([id], map: "ix_call_record_id")
+}
+
+model customer_support_chat_history {
+  id           Int       @id @default(autoincrement())
+  thread_id    String?   @unique @db.VarChar
+  chat_history Json[]
+  name         String    @db.VarChar
+  user_id      Int?
+  agent_type   String?   @db.VarChar
+  created_at   DateTime? @db.Timestamptz(6)
+  updated_at   DateTime? @db.Timestamptz(6)
+  users        User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id], map: "ix_customer_support_chat_history_id")
+}
+
+model customer_support_chats {
+  id                             String                          @id @db.VarChar
+  chat_history                   Json[]
+  agent_id                       String?                         @db.VarChar
+  created_at                     DateTime?                       @db.Timestamptz(6)
+  updated_at                     DateTime?                       @db.Timestamptz(6)
+  third_party_lead_id            String?                         @db.VarChar
+  connected_platform_id          String?                         @db.VarChar
+  platform                       String?                         @db.VarChar
+  smart_customer_support_chatbot smart_customer_support_chatbot? @relation(fields: [agent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model knowledge_attachment {
+  agent_name     String    @db.VarChar
+  attachment_url String    @db.VarChar
+  created_at     DateTime? @default(now()) @db.Timestamptz(6)
+  file_id        String    @id @db.VarChar
+  filename       String    @db.VarChar
+  file_summary   String?   @db.VarChar
+  user_id        Int?
+  users          User?     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model smart_agent_integration {
+  id                             String                          @id @db.VarChar
+  selected_avatar_url            String                          @db.VarChar
+  agent_name                     String                          @db.VarChar
+  colour                         String                          @db.VarChar
+  domain                         String[]                        @db.VarChar
+  agent_id                       String?                         @db.VarChar
+  first_message                  String                          @db.VarChar
+  smart_customer_support_chatbot smart_customer_support_chatbot? @relation(fields: [agent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model smart_customer_support_chatbot {
+  id                      String                    @id @db.VarChar
+  bot_name                String                    @db.VarChar
+  role                    String?                   @db.VarChar
+  personality             String?                   @db.VarChar
+  prompt                  String                    @db.VarChar
+  transfer_case           Json?
+  reference_file          String?                   @db.VarChar
+  reference_text          String?                   @db.VarChar
+  user_id                 Int?
+  customer_support_chats  customer_support_chats[]
+  smart_agent_integration smart_agent_integration[]
+  users                   User?                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model smartbot_avatars {
+  id          String  @id @db.VarChar
+  avatar_url  String  @db.VarChar
+  avatar_name String? @db.VarChar
+  user_id     Int
+}
+
+model agent_integration_track {
+  id                   Int     @id @default(autoincrement())
+  agent_type           String  @db.VarChar
+  integration_platform String  @db.VarChar
+  platform_id          String  @db.VarChar
+  agent_id             String? @db.VarChar
+
+  @@index([id], map: "ix_agent_integration_track_id")
+}
+
+model phone_credits {
+  id      Int    @id @default(autoincrement())
+  user_id Int?
+  balance Float?
+  credits Float?
+  users   User?  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id], map: "ix_phone_credits_id")
 }

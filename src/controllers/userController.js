@@ -612,3 +612,45 @@ exports.deleteMemberAccount=async(req,res)=>{
     })
    }
 }
+
+exports.getPhoneCredits=async(req,res)=>{
+  try{
+    const userId=req.userId;
+    const user=await prisma.user.findUnique({
+      where:{
+        id:userId
+      }
+    })
+
+    if(!user){
+      return res.status(404).json({
+        success:false,
+        message:"User not found"
+      })
+    }
+
+    const phoneCredits=await prisma.phone_credits.findFirst({
+      where:{
+        user_id:userId
+      }
+    })
+
+
+
+    return res.status(200).json({
+      success:true,
+      message:"Phone credits fetched successfully",
+      phoneCredits:{
+        credits:phoneCredits?.credits||0,
+        balance:phoneCredits?.balance||0
+      }
+    })
+  }
+  catch(error){
+    console.log("Error",error.message);
+    return res.status(500).json({
+      success:false,
+      message:"Something went wrong"
+    })
+  }
+}

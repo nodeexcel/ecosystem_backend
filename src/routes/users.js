@@ -29,4 +29,6 @@ router.post('/change-language',authMiddleware,userController.changeLanguage);
 
 router.patch('/delete-member',authMiddleware,userController.deleteMemberAccount);
 
+router.get('/phone-agent-credits',authMiddleware,userController.getPhoneCredits);
+
 module.exports = router; 

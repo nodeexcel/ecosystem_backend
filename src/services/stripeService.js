@@ -38,6 +38,36 @@ const stripeService = {
     }
   },
 
+  createPhoneSessionCreditSession: async (userEmail, userId, amount, credits, currency = 'eur') => {
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        mode: 'payment',
+        line_items: [{
+          price_data: {
+            currency,
+            product_data: { name: `Phone session credits (${credits} )` },
+            unit_amount: Math.round(Number(amount) * 100),
+          },
+          quantity: 1,
+        }],
+        success_url: `${process.env.FRONTEND_URL}/dashboard/phone`,
+        cancel_url: `${process.env.FRONTEND_URL}/cancel`,
+        customer_email: userEmail,
+        metadata: {
+          userId: String(userId),
+          credits: String(credits),
+          amount: String(amount),
+          type: 'phone_credits',
+          purpose: 'phone_session_minutes'
+        },
+      });
+      return session;
+    } catch (error) {
+      throw new Error(`Error creating phone session credit session: ${error.message}`);
+    }
+  },
+
 }
 
 module.exports = stripeService; 

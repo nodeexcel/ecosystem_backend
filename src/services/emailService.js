@@ -15,7 +15,7 @@ const sesClient = new SESClient({
 const sendSubscriptionPurchaseEmail = async (email, username) => {
   try {
     const firstName = username || 'Cher utilisateur';
-    const activateUrl = 'https://www.app.ecosysteme.ai/';
+    const activateUrl = process.env.FRONTEND_URL;
 
     const params = {
       Source: process.env.EMAIL_USER,
