@@ -654,3 +654,111 @@ exports.getPhoneCredits=async(req,res)=>{
     })
   }
 }
+
+
+exports.updateMemberRole = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { memberId, role } = req.body;
+
+
+    if (!memberId || !role) {
+      return res.status(400).json({
+        success: false,
+        message: "Member id and role are required"
+      });
+    }
+
+    if (userId === memberId) {
+      return res.status(400).json({
+        success: false,
+        message: "Admin user cannot update their own role"
+      });
+    }
+
+    // 2. Run independent queries in parallel
+    const [user, member, adminTeam] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, role: true } // Only select what we need
+      }),
+      prisma.user.findUnique({
+        where: { id: memberId },
+        select: { id: true } // Only select what we need
+      }),
+      prisma.team.findFirst({
+        where: { userId: userId },
+        select: { id: true } // Only select what we need
+      })
+    ]);
+
+    // 3. Validate all results at once
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    if (user.role?.toLowerCase() !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can update member role"
+      });
+    }
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "Member not found"
+      });
+    }
+
+    if (!adminTeam) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found"
+      });
+    }
+
+    // 4. Check if member is in the team
+    const memberTeam = await prisma.teammembers.findFirst({
+      where: {
+        userId: memberId,
+        teamId: adminTeam.id
+      },
+      select: { id: true } // Only select what we need
+    });
+
+    if (!memberTeam) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found in team"
+      });
+    }
+
+    // 5. Use transaction for atomicity
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: memberId },
+        data: { role: role }
+      }),
+      prisma.teammembers.update({
+        where: { id: memberTeam.id }, // Use only id, not userId
+        data: { role: role }
+      })
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Member role updated successfully"
+    });
+  } catch (error) {
+    console.error("Error updating member role:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

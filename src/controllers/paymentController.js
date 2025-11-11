@@ -364,6 +364,11 @@ exports.stripeWebhook = async (req, res) => {
 
             console.log(`Added ${credits} credits to user ${userId}`);
 
+            return res.status(200).json({
+              success: true,
+              message: 'Credits purchase successful'
+            });
+
           } catch (error) {
             // Handle errors during credit processing
             console.error('Error processing credit purchase:', error);
@@ -425,6 +430,11 @@ exports.stripeWebhook = async (req, res) => {
                 transactionDate: transactionDate,
                 email: session.customer_details?.email || session.customer_email,
               }
+            });
+
+            return res.status(200).json({
+              success: true,
+              message: 'Phone credits purchase successful'
             });
           } catch (error) {
             console.error('Error processing phone_credits purchase:', error);
@@ -615,7 +625,7 @@ exports.stripeWebhook = async (req, res) => {
           where: { stripeCustomerId: customerId }
         });
 
-        if (!user) return;
+        if (!user) return res.json({ received: true, message: "User don't exisit" });;
 
         console.log(`Processing invoice.paid for user ${user.subscriptionType} - ${user.email}`);
         console.log("Invoice details: ", invoice.amount_paid);
@@ -673,9 +683,15 @@ exports.stripeWebhook = async (req, res) => {
         });
 
         console.log(`Trial user ${user.email} upgraded to subscription successfully`);
+        return res.status(200).json({
+          received: true,
+          message: 'Subscription purchase successful'
+
+        });
 
       } catch (error) {
         console.error("Error processing invoice.paid:", error);
+       return res.status(500).json({ error: 'Failed to update subscription on payment success', details: error.message });
       }
       break;
 
@@ -685,7 +701,7 @@ exports.stripeWebhook = async (req, res) => {
         const customerId = invoice.customer;
 
         // Find the user by Stripe customer ID
-        const user = await prisma.user.findUnique({
+        const user = await prisma.user.findFirst({
           where: { stripeCustomerId: customerId }
         });
 
@@ -714,8 +730,16 @@ exports.stripeWebhook = async (req, res) => {
           }
 
           console.log(`User ${user.email} and team marked expired due to failed payment`);
+          return res.status(200).json({
+            received: true,
+            message: 'Subscription expired due to failed payment'
+          });
         } else {
           console.log(`User ${user.email} is on trial; payment failure ignored`);
+          return res.status(200).json({
+            received: true,
+            message: 'Payment failure ignored'
+          });
         }
       } catch (error) {
         console.error('Error processing invoice.payment_failed:', error);
@@ -726,10 +750,13 @@ exports.stripeWebhook = async (req, res) => {
     default:
       // Log unhandled event types
       console.log(`Unhandled event type ${event.type}`);
+      return res.status(200).json({
+        received: true,
+        message: 'Unhandled event type'
+      });
   }
 
   // Respond to Stripe to acknowledge receipt of the event
-  res.json({ received: true });
 };
 
 

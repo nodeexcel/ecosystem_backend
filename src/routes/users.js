@@ -31,4 +31,6 @@ router.patch('/delete-member',authMiddleware,userController.deleteMemberAccount)
 
 router.get('/phone-agent-credits',authMiddleware,userController.getPhoneCredits);
 
+router.put('/update-member-role',authMiddleware,userController.updateMemberRole);
+
 module.exports = router; 
