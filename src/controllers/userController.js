@@ -655,6 +655,129 @@ exports.getPhoneCredits=async(req,res)=>{
   }
 }
 
+/**
+ * Check if user has enough phone credits to start/answer a call.
+ * Same credit source as GET /api/users/phone-agent-credits.
+ * Call this before connecting (outbound or inbound); if not allowed, reject the call.
+ */
+exports.checkCallAllowed = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const phoneCredits = await prisma.phone_credits.findFirst({
+      where: { user_id: userId }
+    });
+
+    const credits = Number(phoneCredits?.credits ?? 0);
+    const balance = Number(phoneCredits?.balance ?? 0);
+    const minCreditsRequired = 1;
+    const allowed = credits >= minCreditsRequired;
+
+    return res.status(200).json({
+      success: true,
+      allowed,
+      message: allowed ? 'Call allowed' : 'Insufficient phone credits',
+      phoneCredits: {
+        credits,
+        balance
+      }
+    });
+  } catch (error) {
+    console.log('Error checkCallAllowed:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Something went wrong'
+    });
+  }
+};
+
+/**
+ * Deduct phone credits after a call ends (e.g. per minute).
+ * Call this when the call ends with durationSeconds.
+ */
+exports.deductCallCredits = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { durationSeconds } = req.body;
+
+    if (durationSeconds === undefined || durationSeconds === null || Number(durationSeconds) < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'durationSeconds is required and must be a non-negative number'
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const phoneCreditsRow = await prisma.phone_credits.findFirst({
+      where: { user_id: userId }
+    });
+
+    const currentCredits = Number(phoneCreditsRow?.credits ?? 0);
+    const minutesUsed = Math.ceil(Number(durationSeconds) / 60);
+    const toDeduct = Math.min(minutesUsed, currentCredits);
+
+    if (toDeduct <= 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No credits to deduct',
+        phoneCredits: {
+          credits: currentCredits,
+          balance: Number(phoneCreditsRow?.balance ?? 0)
+        }
+      });
+    }
+
+    const newCredits = currentCredits - toDeduct;
+
+    if (phoneCreditsRow) {
+      await prisma.phone_credits.update({
+        where: { id: phoneCreditsRow.id },
+        data: { credits: newCredits }
+      });
+    } else {
+      return res.status(200).json({
+        success: true,
+        message: 'No phone credits record',
+        phoneCredits: { credits: 0, balance: 0 }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Credits deducted',
+      deducted: toDeduct,
+      phoneCredits: {
+        credits: newCredits,
+        balance: Number(phoneCreditsRow?.balance ?? 0)
+      }
+    });
+  } catch (error) {
+    console.log('Error deductCallCredits:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Something went wrong'
+    });
+  }
+};
+
 
 exports.updateMemberRole = async (req, res) => {
   try {

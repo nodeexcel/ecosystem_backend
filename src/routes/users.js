@@ -30,6 +30,8 @@ router.post('/change-language',authMiddleware,userController.changeLanguage);
 router.patch('/delete-member',authMiddleware,userController.deleteMemberAccount);
 
 router.get('/phone-agent-credits',authMiddleware,userController.getPhoneCredits);
+router.get('/phone-agent-credits/check-call',authMiddleware,userController.checkCallAllowed);
+router.post('/phone-agent-credits/deduct-call',authMiddleware,userController.deductCallCredits);
 
 router.put('/update-member-role',authMiddleware,userController.updateMemberRole);
 
